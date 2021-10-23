@@ -22,12 +22,22 @@ public class LoginScreen implements Initializable {
     @FXML public void loginButtonClick(javafx.event.ActionEvent event) {
         if (usernameTextField.getText().isEmpty()) {
             Alert a = new Alert(Alert.AlertType.ERROR);
-            a.setContentText("You must enter a username in order to login!");
+            if (Locale.getDefault().getLanguage().equals("fr")) {
+                ResourceBundle rb = ResourceBundle.getBundle("main/Lang", Locale.getDefault());
+                a.setContentText(rb.getString("usernameError"));
+            } else {
+                a.setContentText("You must enter a username in order to login!");
+            }
             a.showAndWait();
         } else if (passwordTextField.getText().isEmpty()) {
-            Alert b = new Alert(Alert.AlertType.ERROR);
-            b.setContentText("You must enter a password in order to login!");
-            b.showAndWait();
+            Alert a = new Alert(Alert.AlertType.ERROR);
+            if (Locale.getDefault().getLanguage().equals("fr")) {
+                ResourceBundle rb = ResourceBundle.getBundle("main/Lang", Locale.getDefault());
+                a.setContentText(rb.getString("passwordError"));
+            } else {
+                a.setContentText("You must enter a password in order to login!");
+            }
+            a.showAndWait();
         } else System.out.println("Username and password fields are filled!");
     }
 
@@ -42,6 +52,18 @@ public class LoginScreen implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         System.out.println("Login screen initialized");
+
+
+        locationLabel.setText(Locale.getDefault().getDisplayCountry());
+
+        if(Locale.getDefault().getLanguage().equals("fr")) {
+            ResourceBundle rb = ResourceBundle.getBundle("main/Lang", Locale.getDefault());
+            loginButton.setText(rb.getString("login"));
+            loginButton.setPrefWidth(200);
+            loginButton.setLayoutX(200);
+            usernameTextField.setPromptText(rb.getString("username"));
+            passwordTextField.setPromptText(rb.getString("password"));
+        }
     }
 
 }

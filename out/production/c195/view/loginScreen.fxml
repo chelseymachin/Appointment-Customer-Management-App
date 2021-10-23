@@ -19,7 +19,7 @@
          </font></Button>
       <TextField fx:id="usernameTextField" layoutX="228.0" layoutY="193.0" promptText="Username" />
       <TextField fx:id="passwordTextField" layoutX="228.0" layoutY="233.0" promptText="Password" />
-      <Label fx:id="locationLabel" layoutX="539.0" layoutY="408.0" opacity="0.84" style="-fx-background-color: #C1CEFE; -fx-background-radius: 15;" text="Location" textFill="#ff6b6b">
+      <Label fx:id="locationLabel" layoutX="515.0" layoutY="409.0" opacity="0.84" style="-fx-background-color: #C1CEFE; -fx-background-radius: 15;" text="Location" textFill="#ff6b6b">
          <font>
             <Font name="Droid Sans Bold" size="10.0" />
          </font>

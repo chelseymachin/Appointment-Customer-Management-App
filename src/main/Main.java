@@ -21,7 +21,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-        ResourceBundle rb = ResourceBundle.getBundle("c195/src/Lang", Locale.getDefault());
+        ResourceBundle rb = ResourceBundle.getBundle("main/Lang", Locale.getDefault());
 
         if(Locale.getDefault().getLanguage().equals("fr")) {
             System.out.println(rb.getString("username") + " " + rb.getString("password") + " " + rb.getString("login"));
