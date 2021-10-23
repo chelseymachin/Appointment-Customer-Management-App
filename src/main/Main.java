@@ -8,16 +8,25 @@ import javafx.stage.Stage;
 import model.Appointment;
 import model.Customer;
 
+import java.util.Locale;
+import java.util.ResourceBundle;
+
 public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("/view/firstScreen.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/view/loginScreen.fxml"));
         primaryStage.setTitle("First View");
-        primaryStage.setScene(new Scene(root, 800, 600));
+        primaryStage.setScene(new Scene(root, 600, 450));
         primaryStage.show();
     }
 
     public static void main(String[] args) {
+        ResourceBundle rb = ResourceBundle.getBundle("c195/src/Lang", Locale.getDefault());
+
+        if(Locale.getDefault().getLanguage().equals("fr")) {
+            System.out.println(rb.getString("username") + " " + rb.getString("password") + " " + rb.getString("login"));
+        }
+
         Appointment appt;
         appt = new Appointment("4375");
         Customer cust;
