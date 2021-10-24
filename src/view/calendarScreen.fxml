@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
 <AnchorPane prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.CalendarScreen">
    <children>
-      <TableView fx:id="monthTable" layoutX="5.0" layoutY="171.0" prefHeight="378.0" prefWidth="788.0">
+      <ImageView fitHeight="381.0" fitWidth="411.0" layoutX="195.0" layoutY="-21.0" opacity="0.87" pickOnBounds="true" preserveRatio="true" style="-fx-background-color: #C1CEFE;">
+         <image>
+            <Image url="@../assets/appointmentScreenHeader.png" />
+         </image>
+      </ImageView>
+      <TableView fx:id="monthTable" layoutX="5.0" layoutY="243.0" prefHeight="306.0" prefWidth="788.0">
         <columns>
           <TableColumn fx:id="apptIdCol" prefWidth="57.0" style="-fx-background-color: #ff6b6b;" text="Appt ID" />
           <TableColumn fx:id="titleCol" prefWidth="107.0" style="-fx-background-color: #ff6b6b;" text="Title" />
@@ -33,6 +41,16 @@
          </font>
       </Button>
       <Button layoutX="710.0" layoutY="553.0" mnemonicParsing="false" opacity="0.84" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Logout" textFill="#809cff">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Button>
+      <Label layoutX="15.0" layoutY="13.0" text="Appointments">
+         <font>
+            <Font name="System Bold" size="36.0" />
+         </font>
+      </Label>
+      <Button layoutX="625.0" layoutY="197.0" mnemonicParsing="false" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Add Appointment">
          <font>
             <Font size="18.0" />
          </font>
