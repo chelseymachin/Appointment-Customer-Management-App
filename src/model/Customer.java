@@ -13,11 +13,10 @@ public class Customer {
     public Customer() {}
 
     // Long with generic strings
-    public Customer(String customerId, String name, String address, String unit, String city, String zip, String country, String phoneNumber) {
+    public Customer(String customerId, String name, String address, String city, String zip, String country, String phoneNumber) {
         this.customerId = customerId;
         this.name = name;
         this.address = address;
-        this.unit = unit;
         this.city = city;
         this.zip = zip;
         this.country = country;

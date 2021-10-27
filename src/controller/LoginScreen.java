@@ -1,5 +1,6 @@
 package controller;
 
+import DAO.DatabaseConnection;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -10,18 +11,32 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import model.User;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Locale;
 import java.util.ResourceBundle;
+
+import static DAO.Query.loginAttempt;
 
 public class LoginScreen implements Initializable {
     @FXML private Button loginButton;
     @FXML private TextField usernameTextField;
     @FXML private TextField passwordTextField;
     @FXML private Label locationLabel;
+    @FXML private AnchorPane loginScreenPane;
+    Stage stage;
+
+    @FXML public void exitButtonClick(javafx.event.ActionEvent event) throws IOException {
+        stage = (Stage) loginScreenPane.getScene().getWindow();
+        stage.close();
+    }
 
 
 
@@ -45,11 +60,37 @@ public class LoginScreen implements Initializable {
             }
             a.showAndWait();
         } else {
-            Parent parent = FXMLLoader.load(getClass().getResource("/view/CalendarScreen.fxml"));
-            Scene scene = new Scene(parent);
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(scene);
-            stage.show();
+            String username, password;
+            username = usernameTextField.getText();
+            password = passwordTextField.getText();
+
+            if(loginAttempt(username, password)) {
+                Connection connection;
+                try {
+                    connection = DatabaseConnection.openConnection();
+                    ResultSet getUserInfo = connection.createStatement().executeQuery(String.format("SELECT userId, userName FROM user WHERE userName='%s'", username));
+                    getUserInfo.next();
+                    User currentUser = new User(getUserInfo.getString("userName"), getUserInfo.getString("userId"), true);
+                    System.out.println("Current userId: " + User.getUserId() + " userName: " + User.getUsername());
+                } catch (SQLException ex) {
+
+                }
+                Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
+                Scene scene = new Scene(parent);
+                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                stage.setScene(scene);
+                stage.setTitle("Appointments");
+                stage.show();
+            } else {
+                Alert a = new Alert(Alert.AlertType.ERROR);
+                if (Locale.getDefault().getLanguage().equals("fr")) {
+                    ResourceBundle rb = ResourceBundle.getBundle("main/Lang", Locale.getDefault());
+                    a.setContentText(rb.getString("loginError"));
+                } else {
+                    a.setContentText("This username and password combination was not found!  Please try again!");
+                }
+                a.showAndWait();
+            }
         };
     }
 

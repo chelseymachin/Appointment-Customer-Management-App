@@ -13,6 +13,9 @@ public class Appointment {
     String start;
     String end;
     String user;
+    String customerId;
+    String userId;
+    String contactId;
 
     public Appointment() {}
 
@@ -32,6 +35,21 @@ public class Appointment {
         this.start = start;
         this.end = end;
     }
+
+    public Appointment(String appointmentId, String customerId, String title, String description, String location, String type, String date, String start, String end, String userId, String contactId) {
+        this.appointmentId = appointmentId;
+        this.customerId = customerId;
+        this.title = title;
+        this.description = description;
+        this.location = location;
+        this.type = type;
+        this.date = date;
+        this.start = start;
+        this.end = end;
+        this.userId = userId;
+        this.contactId = contactId;
+    }
+
 
     public Appointment(String appointmentId, Customer customer, String title, String description, String location, String type, String user, String url, String date, String start, String end) {
         this.appointmentId = appointmentId;
@@ -135,5 +153,29 @@ public class Appointment {
 
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getContactId() {
+        return contactId;
+    }
+
+    public void setContactId(String contactId) {
+        this.contactId = contactId;
     }
 }

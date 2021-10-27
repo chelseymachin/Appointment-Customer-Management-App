@@ -1,5 +1,6 @@
 package main;
 
+import DAO.DatabaseConnection;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -21,6 +22,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
+        DatabaseConnection.openConnection();
         ResourceBundle rb = ResourceBundle.getBundle("main/Lang", Locale.getDefault());
 
         if(Locale.getDefault().getLanguage().equals("fr")) {
@@ -30,10 +32,12 @@ public class Main extends Application {
         Appointment appt;
         appt = new Appointment("4375");
         Customer cust;
-        cust = new Customer("43", "Tina Sanchez", "4375 Havenview Parkway", "#2", "Tacoma", "98406", "USA", "3609797099");
+        cust = new Customer("43", "Tina Sanchez", "4375 Havenview Parkway", "Tacoma", "98406", "USA", "3609797099");
         System.out.println(appt.getAppointmentId());
         System.out.println(cust.getAddress());
         launch(args);
+
+        DatabaseConnection.closeConnection();
 
     }
 }

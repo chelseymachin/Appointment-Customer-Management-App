@@ -1,46 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<AnchorPane prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.CalendarScreen">
+<AnchorPane fx:id="apptsScreenPane" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.AppointmentScreen">
    <children>
       <ImageView fitHeight="381.0" fitWidth="411.0" layoutX="195.0" layoutY="-21.0" opacity="0.87" pickOnBounds="true" preserveRatio="true" style="-fx-background-color: #C1CEFE;">
          <image>
             <Image url="@../assets/appointmentScreenHeader.png" />
          </image>
       </ImageView>
-      <TableView fx:id="monthTable" layoutX="5.0" layoutY="243.0" prefHeight="306.0" prefWidth="788.0">
+      <TableView fx:id="apptsTable" layoutX="5.0" layoutY="243.0" prefHeight="306.0" prefWidth="788.0">
         <columns>
-          <TableColumn fx:id="apptIdCol" prefWidth="57.0" style="-fx-background-color: #ff6b6b;" text="Appt ID" />
-          <TableColumn fx:id="titleCol" prefWidth="107.0" style="-fx-background-color: #ff6b6b;" text="Title" />
+            <TableColumn fx:id="apptIdCol" prefWidth="57.0" style="-fx-background-color: #ff6b6b;" text="Appt ID" />
+            <TableColumn fx:id="customerIdCol" prefWidth="112.33331298828125" style="-fx-background-color: #ff6b6b;" text="Customer ID" />
+            <TableColumn fx:id="titleCol" prefWidth="107.0" style="-fx-background-color: #ff6b6b;" text="Title" />
             <TableColumn fx:id="descriptionCol" prefWidth="99.33332824707031" style="-fx-background-color: #ff6b6b;" text="Description" />
             <TableColumn fx:id="locationCol" prefWidth="73.0" style="-fx-background-color: #ff6b6b;" text="Location" />
             <TableColumn fx:id="contactCol" prefWidth="80.33331298828125" style="-fx-background-color: #ff6b6b;" text="Contact" />
             <TableColumn fx:id="typeCol" prefWidth="74.33334350585938" style="-fx-background-color: #ff6b6b;" text="Type" />
             <TableColumn fx:id="startDateAndTimeCol" prefWidth="116.3333740234375" style="-fx-background-color: #ff6b6b;" text="Start Date &amp; Time" />
             <TableColumn fx:id="endDateAndTimeCol" prefWidth="112.33331298828125" style="-fx-background-color: #ff6b6b;" text="End Date &amp; Time" />
-            <TableColumn fx:id="customerIdCol" prefWidth="112.33331298828125" style="-fx-background-color: #ff6b6b;" text="Customer ID" />
             <TableColumn fx:id="userIdCol" prefWidth="112.33331298828125" style="-fx-background-color: #ff6b6b;" text="User ID" />
         </columns>
       </TableView>
-      <Button layoutX="7.0" layoutY="553.0" mnemonicParsing="false" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Customers">
+      <Button fx:id="customersButton" layoutX="7.0" layoutY="553.0" mnemonicParsing="false" onAction="#customersButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Customers">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button layoutX="121.0" layoutY="553.0" mnemonicParsing="false" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Reports">
+      <Button fx:id="reportsButton" layoutX="121.0" layoutY="553.0" mnemonicParsing="false" onAction="#reportsButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Reports">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button layoutX="710.0" layoutY="553.0" mnemonicParsing="false" opacity="0.84" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Logout" textFill="#809cff">
+      <Button fx:id="logoutButton" layoutX="710.0" layoutY="553.0" mnemonicParsing="false" onAction="#logout" opacity="0.84" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Logout" textFill="#809cff">
          <font>
             <Font size="18.0" />
          </font>
@@ -50,7 +46,12 @@
             <Font name="System Bold" size="36.0" />
          </font>
       </Label>
-      <Button layoutX="625.0" layoutY="197.0" mnemonicParsing="false" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Add Appointment">
+      <Button layoutX="7.0" layoutY="195.0" mnemonicParsing="false" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Add Appointment">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Button>
+      <Button layoutX="607.0" layoutY="195.0" mnemonicParsing="false" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Delete Appointment">
          <font>
             <Font size="18.0" />
          </font>
