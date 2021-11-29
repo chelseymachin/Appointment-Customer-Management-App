@@ -248,7 +248,7 @@ public class AppointmentScreen implements Initializable {
             apptEndTimeComboBox.setValue(selectedAppointment.getEndTime());
         } else {
             Alert a = new Alert(Alert.AlertType.ERROR);
-            a.setContentText("Please select an appointment in order to delete it!");
+            a.setContentText("Please select an appointment in order to edit it!");
             a.showAndWait();
         }
     }
@@ -259,7 +259,8 @@ public class AppointmentScreen implements Initializable {
         apptTitleInput.clear();
         apptLocationInput.clear();
         apptDescriptionInput.clear();
-        apptContactComboBox.setValue(null);
+        apptContactComboBox.valueProperty().set(null);
+        apptCustomerComboBox.valueProperty().set(null);
         apptDatePicker.setValue(null);
         apptStartTimeComboBox.setValue(null);
         apptEndTimeComboBox.setValue(null);

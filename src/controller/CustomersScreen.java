@@ -12,17 +12,19 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import model.Country;
 import model.Customer;
 import model.FirstLevelDivision;
+import model.User;
 
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -39,8 +41,8 @@ public class CustomersScreen implements Initializable {
     @FXML private TextField customerAddressInput;
     @FXML private TextField postalCodeInput;
     @FXML private TextField customerPhoneInput;
-    @FXML private ComboBox<String> stateComboBox;
-    @FXML private ComboBox<String> countryComboBox;
+    @FXML private ComboBox stateComboBox;
+    @FXML private ComboBox countryComboBox;
     @FXML private Button backButton;
     @FXML private Button logoutButton;
     @FXML private Button editButton;
@@ -48,9 +50,10 @@ public class CustomersScreen implements Initializable {
     @FXML private Button deleteButton;
     @FXML private AnchorPane customersScreenPane;
     ObservableList<Customer> customersObservableList = FXCollections.observableArrayList();
-    ObservableList<String> statesList = FXCollections.observableArrayList();
-    ObservableList<String> countryList = FXCollections.observableArrayList();
+    ObservableList<Country> countriesObservableList = FXCollections.observableArrayList();
+    ObservableList<FirstLevelDivision> fldObservableList = FXCollections.observableArrayList();
     private Customer selectedCustomer;
+    private User currentUser;
     Stage stage;
 
     public void viewAllCustomers() {
@@ -75,6 +78,79 @@ public class CustomersScreen implements Initializable {
             customersTable.setItems(customersObservableList);
         } catch (Exception ex) {
             System.out.println("Error with viewing all customers");
+        }
+    }
+
+    public void saveButtonHandler(javafx.event.ActionEvent event) throws IOException, SQLException {
+        Connection connection;
+        connection = DAO.DatabaseConnection.openConnection();
+
+        PreparedStatement prepared = null;
+        String sql = null;
+        Integer customerId;
+
+        if (!customerIdInput.getText().isEmpty()) {
+            customerId = Integer.parseInt(customerIdInput.getText());
+        }
+
+        String customerName = customerNameInput.getText();
+        String address = customerAddressInput.getText();
+        FirstLevelDivision fld = new FirstLevelDivision(
+                Query.getFirstLevelDivisionId(stateComboBox.getSelectionModel().getSelectedItem().toString()),
+                stateComboBox.getSelectionModel().getSelectedItem().toString()
+        );
+        Country country = new Country(
+                Query.getCountryId(countryComboBox.getSelectionModel().getSelectedItem().toString()),
+                countryComboBox.getSelectionModel().getSelectedItem().toString()
+        );
+        String zip = postalCodeInput.getText();
+        String countryName = country.countryName;
+        String phone = customerPhoneInput.getText();
+        Integer userId = currentUser.getUserId();
+
+        if (!customerIdInput.getText().isEmpty()) {
+            sql = "UPDATE customers SET Customer_Name = ?, Address = ?, Postal_Code = ?, Phone = ?, Last_Update = NOW(), Last_Updated_By = ? WHERE Customer_ID = ?";
+            prepared = connection.prepareStatement(sql);
+            prepared.setString(1, customerName);
+            prepared.setString(2, address);
+            prepared.setString(3, zip);
+            prepared.setString(4, phone);
+            prepared.setInt(5, userId);
+            prepared.setInt(6, Integer.parseInt(this.customerIdInput.getText()));
+
+            int result = prepared.executeUpdate();
+            if (result > 0) {
+                Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
+                Scene scene = new Scene(parent);
+                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                stage.setScene(scene);
+                stage.setTitle("Customers");
+                stage.show();
+            } else {
+                System.out.println("No update happened!");
+            }
+        } else {
+            sql = "INSERT INTO customers (Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) VALUES (?, ?, ?, ?, NOW(), ?, NOW(), ?, ?)";
+            prepared = connection.prepareStatement(sql);
+            prepared.setString(1, customerName);
+            prepared.setString(2, address);
+            prepared.setString(3, zip);
+            prepared.setString(4, phone);
+            prepared.setInt(5, userId);
+            prepared.setInt(6, userId);
+            prepared.setInt(7, fld.firstLevelDivisionId);
+
+            int result = prepared.executeUpdate();
+            if (result > 0) {
+                Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
+                Scene scene = new Scene(parent);
+                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                stage.setScene(scene);
+                stage.setTitle("Customers");
+                stage.show();
+            } else {
+                System.out.println("No new customers were made!");
+            }
         }
     }
 
@@ -123,12 +199,8 @@ public class CustomersScreen implements Initializable {
             customerNameInput.setText(selectedCustomer.getName());
             customerAddressInput.setText(selectedCustomer.getAddress());
             postalCodeInput.setText(selectedCustomer.getZip());
-            Country customerCountry = selectedCustomer.getCustomerCountry();
-            System.out.println(customerCountry);
-            FirstLevelDivision customerFLD = selectedCustomer.getCustomerFirstLevelDivision();
-            System.out.println(customerFLD);
-            countryComboBox.setValue(customerCountry);
-            stateComboBox.setValue(customerFLD);
+            countryComboBox.getSelectionModel().select(selectedCustomer.getCountryName());
+            stateComboBox.getSelectionModel().select(selectedCustomer.getFirstLevelDivisionName());
             customerPhoneInput.setText(selectedCustomer.getPhoneNumber());
         } else {
             Alert a = new Alert(Alert.AlertType.ERROR);
@@ -137,40 +209,15 @@ public class CustomersScreen implements Initializable {
         }
     }
 
-    public void searchByCustomerId(KeyEvent keyEvent) {
-    }
-
-    public void searchByCustomerName(KeyEvent keyEvent) {
-    }
-
-    public void searchByCustomerPhone(KeyEvent keyEvent) {
-    }
-
-    private void setFLDComboItems(){
-        ObservableList<String> fldList = FXCollections.observableArrayList();
-
-        try {
-            ObservableList<FirstLevelDivision> firstLevelDivisions = Query.getFirstLevelDivisionsList();;
-            if (firstLevelDivisions != null) {
-                for (FirstLevelDivision firstLevelDivision: firstLevelDivisions) {
-                    fldList.add(firstLevelDivision.getFirstLevelDivisionName());
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("Error getting FLD combo box items");
-        }
-
-        stateComboBox.setItems(fldList);
-    }
-
-
     public void clearButtonHandler(ActionEvent actionEvent) {
         customerIdInput.clear();
         customerNameInput.clear();
         customerAddressInput.clear();
         postalCodeInput.clear();
-        stateComboBox.setValue(null);
-        countryComboBox.setValue(null);
+        stateComboBox.valueProperty().set(null);
+        stateComboBox.setPromptText("State/Province");
+        countryComboBox.valueProperty().set(null);
+        countryComboBox.setPromptText("Country");
         customerPhoneInput.clear();
 
         customerIdInput.setDisable(false);
@@ -180,7 +227,14 @@ public class CustomersScreen implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        customerIdInput.setDisable(true);
+        fldObservableList.clear();
+        fldObservableList = Query.getFirstLevelDivisionsList();
+        stateComboBox.setItems(fldObservableList);
 
+        countriesObservableList.clear();
+        countriesObservableList = Query.getCountriesList();
+        countryComboBox.setItems(countriesObservableList);
         viewAllCustomers();
 
         customersIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
@@ -188,9 +242,6 @@ public class CustomersScreen implements Initializable {
         customersAddressCol.setCellValueFactory(new PropertyValueFactory<>("address"));
         customersPostalCodeCol.setCellValueFactory(new PropertyValueFactory<>("zip"));
         customersPhoneCol.setCellValueFactory(new PropertyValueFactory<>("phoneNumber"));
-
-
-
     }
 
 }

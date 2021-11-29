@@ -15,11 +15,7 @@ public class Query {
     private static ResultSet selection;
     private static String input;
     private static Statement statement;
-    static ObservableList<FirstLevelDivision> firstLevelDivisionsList = FXCollections.observableArrayList();
-    static ObservableList<Country> countriesList = FXCollections.observableArrayList();
     static ObservableList<String> startTimes = FXCollections.observableArrayList();
-    static ObservableList<Contact> contactsList = FXCollections.observableArrayList();
-    static ObservableList<Customer> customersList = FXCollections.observableArrayList();
 
     public static boolean loginAttempt(String username, String password) {
         try{
@@ -41,8 +37,9 @@ public class Query {
     }
 
     public static ObservableList<FirstLevelDivision> getFirstLevelDivisionsList() {
+        ObservableList<FirstLevelDivision> firstLevelDivisionsList = FXCollections.observableArrayList();
+
         try {
-            firstLevelDivisionsList.removeAll();
             ResultSet results = connection.createStatement().executeQuery("SELECT Division_ID, Division, Country_ID FROM first_level_divisions;");
             while(results.next()) {
                 FirstLevelDivision newFirstLevelDivision = new FirstLevelDivision(
@@ -57,7 +54,7 @@ public class Query {
         return firstLevelDivisionsList;
     }
 
-    public static FirstLevelDivision getFirstLevelDivisionId(String firstLevelDivisionName) throws SQLException {
+    public static Integer getFirstLevelDivisionId(String firstLevelDivisionName) throws SQLException {
         String sql = "SELECT * FROM first_level_divisions WHERE Division=?";
         PreparedStatement prepared = connection.prepareStatement(sql);
         prepared.setString(1, firstLevelDivisionName);
@@ -72,7 +69,7 @@ public class Query {
                         results.getInt("Country_ID"),
                         results.getString("Division")
                 );
-                return newFLD;
+                return newFLD.firstLevelDivisionId;
             }
         } catch (Exception ex) {
             System.out.println("Error in getting FLD");
@@ -80,8 +77,30 @@ public class Query {
         return null;
     }
 
+    public static Integer getCountryId(String countryName) throws SQLException {
+        String sql = "SELECT * FROM countries WHERE Country=?";
+        PreparedStatement prepared = connection.prepareStatement(sql);
+        prepared.setString(1, countryName);
+
+        try {
+            prepared.execute();
+            ResultSet results = prepared.getResultSet();
+
+            while (results.next()) {
+                Country newCountry = new Country(
+                        results.getInt("Country_ID"),
+                        results.getString("Country")
+                );
+                return newCountry.countryId;
+            }
+        } catch (Exception ex) {
+            System.out.println("Error in getting country ID");
+        }
+        return null;
+    }
+
     public static ObservableList<FirstLevelDivision> getFirstLevelDivisionsByCountry(String countryName) throws SQLException {
-        Country newCountry = DAO.Query.getCountryId(countryName);
+        Country newCountry = new Country(DAO.Query.getCountryId(countryName), countryName);
         ObservableList<FirstLevelDivision> divisions = FXCollections.observableArrayList();
 
         String sql = "SELECT * FROM first_level_divisions WHERE COUNTRY_ID=?;";
@@ -110,7 +129,8 @@ public class Query {
     }
 
     public static ObservableList<Customer> getCustomersList() {
-        customersList.removeAll();
+        ObservableList<Customer> customersList = FXCollections.observableArrayList();
+
         try {
             ResultSet results = connection.createStatement().executeQuery("SELECT Customer_ID, Customer_Name from customers;");
             while(results.next()) {
@@ -127,8 +147,9 @@ public class Query {
     }
 
     public static ObservableList<Country> getCountriesList() {
+        ObservableList<Country> countriesList = FXCollections.observableArrayList();
+
         try {
-            countriesList.removeAll();
             ResultSet results = connection.createStatement().executeQuery("SELECT Country_ID, Country from countries;");
             while(results.next()) {
                 Country newCountry = new Country(
@@ -141,28 +162,6 @@ public class Query {
             System.out.println("Error with getting all countries");
         }
         return countriesList;
-    }
-
-    public static Country getCountryId(String countryName) throws SQLException {
-        String sql = "SELECT * FROM countries WHERE Country_Name=?";
-        PreparedStatement prepared = connection.prepareStatement(sql);
-        prepared.setString(1, countryName);
-
-        try {
-            prepared.execute();
-            ResultSet results = prepared.getResultSet();
-
-            while (results.next()) {
-                Country newCountry = new Country(
-                        results.getInt("Country_ID"),
-                        results.getString("Division")
-                );
-                return newCountry;
-            }
-        } catch (Exception ex) {
-            System.out.println("Error in getting Country");
-        }
-        return null;
     }
 
     public static ObservableList<String> getStartTimes() {
@@ -206,7 +205,7 @@ public class Query {
     }
 
     public static ObservableList<Contact> getContacts() {
-        contactsList.removeAll();
+        ObservableList<Contact> contactsList = FXCollections.observableArrayList();
         try {
             ResultSet results = connection.createStatement().executeQuery("SELECT Contact_ID, Contact_Name, Email from contacts;");
             while(results.next()) {

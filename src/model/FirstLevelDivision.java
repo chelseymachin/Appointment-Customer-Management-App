@@ -11,7 +11,7 @@ public class FirstLevelDivision {
         this.firstLevelDivisionName = firstLevelDivisionName;
     }
 
-    public FirstLevelDivision(int firstLevelDivisionId, String firstLevelDivisionName) {
+    public FirstLevelDivision(Integer firstLevelDivisionId, String firstLevelDivisionName) {
         this.firstLevelDivisionName = firstLevelDivisionName;
         this.firstLevelDivisionId = firstLevelDivisionId;
     }

@@ -76,7 +76,7 @@
             <Font size="18.0" />
          </font>
       </Button>
-      <Button fx:id="saveButton" layoutX="339.0" layoutY="221.0" mnemonicParsing="false" prefHeight="39.0" prefWidth="80.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Save">
+      <Button fx:id="saveButton" layoutX="339.0" layoutY="221.0" mnemonicParsing="false" onAction="#saveButtonHandler" prefHeight="39.0" prefWidth="80.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Save">
          <font>
             <Font size="18.0" />
          </font>
