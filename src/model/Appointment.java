@@ -1,6 +1,9 @@
 package model;
 
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 public class Appointment {
     String appointmentId;
     Customer customer;
@@ -9,9 +12,9 @@ public class Appointment {
     String location;
     String type;
     String url;
-    String date;
-    String start;
-    String end;
+    LocalDate date;
+    LocalTime startTime;
+    LocalTime endTime;
     String user;
     String customerId;
     String userId;
@@ -23,7 +26,7 @@ public class Appointment {
         this.appointmentId = appointmentId;
     }
 
-    public Appointment(String appointmentId, Customer customer, String title, String description, String location, String type, String user, String date, String start, String end) {
+    public Appointment(String appointmentId, Customer customer, String title, String description, String location, String type, String user, LocalDate date, LocalTime start, LocalTime end) {
         this.appointmentId = appointmentId;
         this.customer = customer;
         this.title = title;
@@ -32,8 +35,8 @@ public class Appointment {
         this.type = type;
         this.user = user;
         this.date = date;
-        this.start = start;
-        this.end = end;
+        this.startTime = start;
+        this.endTime = end;
     }
 
     public Appointment(String appointmentId, String customerId, String title, String description, String location, String type, String date, String start, String end, String userId, String contactId) {
@@ -43,9 +46,9 @@ public class Appointment {
         this.description = description;
         this.location = location;
         this.type = type;
-        this.date = date;
-        this.start = start;
-        this.end = end;
+        this.date = LocalDate.parse(date.substring(0, 10));
+        this.startTime = LocalTime.parse(start.substring(11, 16));
+        this.endTime = LocalTime.parse(end.substring(11, 16));
         this.userId = userId;
         this.contactId = contactId;
     }
@@ -60,9 +63,9 @@ public class Appointment {
         this.type = type;
         this.user = user;
         this.url = url;
-        this.date = date;
-        this.start = start;
-        this.end = end;
+        this.date = LocalDate.parse(date);
+        this.startTime = LocalTime.parse(start);
+        this.endTime = LocalTime.parse(end);
     }
 
     // Getter & Setter Methods
@@ -123,28 +126,28 @@ public class Appointment {
         this.url = url;
     }
 
-    public String getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(String date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 
-    public String getStart() {
-        return start;
+    public LocalTime getStartTime() {
+        return startTime;
     }
 
-    public void setStart(String start) {
-        this.start = start;
+    public void setStartTime(LocalTime start) {
+        this.startTime = start;
     }
 
-    public String getEnd() {
-        return end;
+    public LocalTime getEndTime() {
+        return endTime;
     }
 
-    public void setEnd(String end) {
-        this.end = end;
+    public void setEndTime(LocalTime end) {
+        this.endTime = end;
     }
 
     public String getUser() {

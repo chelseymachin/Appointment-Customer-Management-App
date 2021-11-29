@@ -1,0 +1,15 @@
+.date-picker-popup {
+    -fx-background-color: #ff6b6b;
+}
+
+.date-picker-popup > .month-year-pane {
+    -fx-background-color: #ff6b6b;
+}
+
+.date-picker-popup > * > .spinner > .button {
+    -fx-background-color: #ff6b6b;
+}
+
+.date-picker .text-field {
+    -fx-control-inner-background: #ff6b6b;
+}

@@ -31,6 +31,7 @@ public class LoginScreen implements Initializable {
     @FXML private TextField passwordTextField;
     @FXML private Label locationLabel;
     @FXML private AnchorPane loginScreenPane;
+    User currentUser;
     Stage stage;
 
     @FXML public void exitButtonClick(javafx.event.ActionEvent event) throws IOException {
@@ -68,12 +69,14 @@ public class LoginScreen implements Initializable {
                 Connection connection;
                 try {
                     connection = DatabaseConnection.openConnection();
-                    ResultSet getUserInfo = connection.createStatement().executeQuery(String.format("SELECT userId, userName FROM user WHERE userName='%s'", username));
+                    ResultSet getUserInfo = connection.createStatement().executeQuery(String.format("SELECT User_ID, User_Name FROM users WHERE User_Name='%s'", username));
                     getUserInfo.next();
-                    User currentUser = new User(getUserInfo.getString("userName"), getUserInfo.getString("userId"), true);
-                    System.out.println("Current userId: " + User.getUserId() + " userName: " + User.getUsername());
+                    User currentUser = new User(getUserInfo.getString("User_ID"), getUserInfo.getString("User_Name"), true);
+                    System.out.println("Current userId: " + currentUser.getUserId() + " userName: " + currentUser.getUsername());
+                    this.currentUser = currentUser;
+                    AppointmentScreen.passCurrentUserData(this.currentUser);
                 } catch (SQLException ex) {
-
+                    System.out.println("login failed");
                 }
                 Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
                 Scene scene = new Scene(parent);

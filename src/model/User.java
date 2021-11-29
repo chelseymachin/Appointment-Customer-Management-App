@@ -1,15 +1,20 @@
 package model;
 
 public class User {
-    private static String userId;
+    private static Integer userId;
     private static String username;
     private static boolean isLoggedIn;
 
 
     public User(String userId, String username, boolean isLoggedIn) {
-        this.userId = userId;
+        this.userId = Integer.parseInt(userId);
         this.username = username;
         this.isLoggedIn = isLoggedIn;
+    }
+
+    public User(Integer userId, String username) {
+        this.userId = userId;
+        this.username = username;
     }
 
     public static String getUsername() {
@@ -28,11 +33,16 @@ public class User {
         User.isLoggedIn = isLoggedIn;
     }
 
-    public static String getUserId() {
+    public static Integer getUserId() {
         return userId;
     }
 
-    public void setUserId(String userId) {
+
+    public void setUserId(Integer userId) {
         this.userId = userId;
+    }
+
+    @Override public String toString() {
+        return (Integer.toString(userId) + " - " + username);
     }
 }
