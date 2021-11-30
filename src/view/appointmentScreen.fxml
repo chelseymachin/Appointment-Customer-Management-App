@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane fx:id="apptsScreenPane" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.AppointmentScreen">
+<AnchorPane fx:id="apptsScreenPane" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.AppointmentScreen">
    <children>
       <ImageView fitHeight="381.0" fitWidth="411.0" layoutX="407.0" layoutY="-21.0" opacity="0.87" pickOnBounds="true" preserveRatio="true" style="-fx-background-color: #C1CEFE;">
          <image>
@@ -74,7 +74,7 @@
             <Font name="System Bold" size="14.0" />
          </font>
       </Label>
-      <TextArea fx:id="apptDescriptionInput" layoutX="61.0" layoutY="165.0" prefHeight="66.0" prefWidth="216.0" stylesheets="@styles/textAreaStyles.css" />
+      <TextArea fx:id="apptDescriptionInput" layoutX="61.0" layoutY="165.0" prefHeight="66.0" prefWidth="216.0" stylesheets="@styles/textAreaStyles.css" wrapText="true" />
       <Label layoutX="62.0" layoutY="146.0" text="Description">
          <font>
             <Font name="System Bold" size="14.0" />
