@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane fx:id="customersScreenPane" prefHeight="570.0" prefWidth="503.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.CustomersScreen">
+<AnchorPane fx:id="customersScreenPane" prefHeight="570.0" prefWidth="503.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.CustomersScreen">
    <children>
       <ImageView fitHeight="246.0" fitWidth="314.0" layoutX="214.0" layoutY="-4.0" pickOnBounds="true">
          <image>
@@ -60,7 +60,7 @@
          </font>
       </Label>
       <ComboBox fx:id="stateComboBox" layoutX="143.0" layoutY="165.0" prefHeight="25.0" prefWidth="95.0" promptText="State/Province" style="-fx-background-color: #ff6b6b;" />
-      <ComboBox fx:id="countryComboBox" layoutX="70.0" layoutY="202.0" prefHeight="25.0" prefWidth="135.0" promptText="Country" style="-fx-background-color: #ff6b6b;" />
+      <ComboBox fx:id="countryComboBox" layoutX="70.0" layoutY="202.0" onAction="#filterFLDByCountry" prefHeight="25.0" prefWidth="135.0" promptText="Country" style="-fx-background-color: #ff6b6b;" />
       <Button fx:id="backButton" layoutX="16.0" layoutY="523.0" mnemonicParsing="false" onAction="#backButtonHandler" prefHeight="8.0" prefWidth="61.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Back">
          <font>
             <Font size="18.0" />

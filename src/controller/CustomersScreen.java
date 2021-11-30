@@ -22,7 +22,6 @@ import model.User;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
@@ -50,9 +49,11 @@ public class CustomersScreen implements Initializable {
     @FXML private Button deleteButton;
     @FXML private AnchorPane customersScreenPane;
     ObservableList<Customer> customersObservableList = FXCollections.observableArrayList();
-    ObservableList<Country> countriesObservableList = FXCollections.observableArrayList();
-    ObservableList<FirstLevelDivision> fldObservableList = FXCollections.observableArrayList();
+    ObservableList<String> countriesObservableList = FXCollections.observableArrayList();
+    ObservableList<String> fldObservableList = FXCollections.observableArrayList();
     private Customer selectedCustomer;
+    private FirstLevelDivision selectedCustomerFLD;
+    private Country selectedCustomerCountry;
     private User currentUser;
     Stage stage;
 
@@ -82,76 +83,63 @@ public class CustomersScreen implements Initializable {
     }
 
     public void saveButtonHandler(javafx.event.ActionEvent event) throws IOException, SQLException {
-        Connection connection;
-        connection = DAO.DatabaseConnection.openConnection();
+        String customerId;
+        String customerName = null;
+        String address = null;
+        String fld = null;
+        String zip = null;
+        String phone = null;
 
-        PreparedStatement prepared = null;
-        String sql = null;
-        Integer customerId;
 
-        if (!customerIdInput.getText().isEmpty()) {
-            customerId = Integer.parseInt(customerIdInput.getText());
+        if (customerNameInput.getText().isEmpty() || customerAddressInput.getText().isEmpty() || stateComboBox.getSelectionModel().isEmpty() || countryComboBox.getSelectionModel().isEmpty() || postalCodeInput.getText().isEmpty() || customerPhoneInput.getText().isEmpty()) {
+            Alert a = new Alert(Alert.AlertType.ERROR);
+            a.setContentText("Please enter a value/selection for all fields in order to save!");
+            a.showAndWait();
+        } else {
+            customerName = customerNameInput.getText();
+            address = customerAddressInput.getText();
+            fld = stateComboBox.getValue().toString();
+            zip = postalCodeInput.getText();
+            phone = customerPhoneInput.getText();
         }
 
-        String customerName = customerNameInput.getText();
-        String address = customerAddressInput.getText();
-        FirstLevelDivision fld = new FirstLevelDivision(
-                Query.getFirstLevelDivisionId(stateComboBox.getSelectionModel().getSelectedItem().toString()),
-                stateComboBox.getSelectionModel().getSelectedItem().toString()
-        );
-        Country country = new Country(
-                Query.getCountryId(countryComboBox.getSelectionModel().getSelectedItem().toString()),
-                countryComboBox.getSelectionModel().getSelectedItem().toString()
-        );
-        String zip = postalCodeInput.getText();
-        String countryName = country.countryName;
-        String phone = customerPhoneInput.getText();
         Integer userId = currentUser.getUserId();
 
         if (!customerIdInput.getText().isEmpty()) {
-            sql = "UPDATE customers SET Customer_Name = ?, Address = ?, Postal_Code = ?, Phone = ?, Last_Update = NOW(), Last_Updated_By = ? WHERE Customer_ID = ?";
-            prepared = connection.prepareStatement(sql);
-            prepared.setString(1, customerName);
-            prepared.setString(2, address);
-            prepared.setString(3, zip);
-            prepared.setString(4, phone);
-            prepared.setInt(5, userId);
-            prepared.setInt(6, Integer.parseInt(this.customerIdInput.getText()));
+            customerId = customerIdInput.getText();
+            Query.updateCustomer(
+                    customerId,
+                    customerName,
+                    address,
+                    zip,
+                    phone,
+                    Query.getFirstLevelDivisionId(fld),
+                    userId
+            );
 
-            int result = prepared.executeUpdate();
-            if (result > 0) {
-                Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
-                Scene scene = new Scene(parent);
-                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                stage.setScene(scene);
-                stage.setTitle("Customers");
-                stage.show();
-            } else {
-                System.out.println("No update happened!");
-            }
+
         } else {
-            sql = "INSERT INTO customers (Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) VALUES (?, ?, ?, ?, NOW(), ?, NOW(), ?, ?)";
-            prepared = connection.prepareStatement(sql);
-            prepared.setString(1, customerName);
-            prepared.setString(2, address);
-            prepared.setString(3, zip);
-            prepared.setString(4, phone);
-            prepared.setInt(5, userId);
-            prepared.setInt(6, userId);
-            prepared.setInt(7, fld.firstLevelDivisionId);
-
-            int result = prepared.executeUpdate();
-            if (result > 0) {
-                Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
-                Scene scene = new Scene(parent);
-                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                stage.setScene(scene);
-                stage.setTitle("Customers");
-                stage.show();
-            } else {
-                System.out.println("No new customers were made!");
+            try {
+                Query.addCustomer(
+                        customerName,
+                        address,
+                        zip,
+                        phone,
+                        Query.getFirstLevelDivisionId(fld),
+                        userId
+                );
+            } catch (SQLException exception) {
+                System.out.println(exception.getMessage());
             }
+
         }
+
+        Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
+        Scene scene = new Scene(parent);
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        stage.setScene(scene);
+        stage.setTitle("Customers");
+        stage.show();
     }
 
     public void deleteButtonHandler(javafx.event.ActionEvent event) throws IOException {
@@ -190,8 +178,27 @@ public class CustomersScreen implements Initializable {
         }
     }
 
+    @FXML void filterFLDByCountry(ActionEvent event) {
+        if (!countryComboBox.getSelectionModel().isEmpty()) {
+            fldObservableList.clear();
+            try {
+                ObservableList<FirstLevelDivision> firstLevelDivisions = Query.getFirstLevelDivisionsByCountry(countryComboBox.getSelectionModel().getSelectedItem().toString());
+                if (firstLevelDivisions != null) {
+                    for (FirstLevelDivision firstLevelDivision: firstLevelDivisions) {
+                        fldObservableList.add(firstLevelDivision.firstLevelDivisionName);
+                    }
+                }
+                stateComboBox.setItems(fldObservableList);
+            } catch (SQLException e){
+                e.printStackTrace();
+            }
+        }
+    }
+
     @FXML public void editButtonHandler(javafx.event.ActionEvent event) throws IOException {
         selectedCustomer = customersTable.getSelectionModel().getSelectedItem();
+        selectedCustomerCountry = selectedCustomer.getCustomerCountry();
+        selectedCustomerFLD = selectedCustomer.getCustomerFirstLevelDivision();
 
         if(selectedCustomer instanceof Customer) {
             customerIdInput.setDisable(true);
@@ -199,8 +206,9 @@ public class CustomersScreen implements Initializable {
             customerNameInput.setText(selectedCustomer.getName());
             customerAddressInput.setText(selectedCustomer.getAddress());
             postalCodeInput.setText(selectedCustomer.getZip());
-            countryComboBox.getSelectionModel().select(selectedCustomer.getCountryName());
-            stateComboBox.getSelectionModel().select(selectedCustomer.getFirstLevelDivisionName());
+
+            countryComboBox.setValue(selectedCustomer.getCountryName());
+            stateComboBox.setValue(selectedCustomer.getFirstLevelDivisionName());
             customerPhoneInput.setText(selectedCustomer.getPhoneNumber());
         } else {
             Alert a = new Alert(Alert.AlertType.ERROR);

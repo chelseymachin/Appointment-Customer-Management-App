@@ -2,7 +2,10 @@ package DAO;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import model.*;
+import model.Contact;
+import model.Country;
+import model.Customer;
+import model.FirstLevelDivision;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,17 +39,32 @@ public class Query {
         }
     }
 
-    public static ObservableList<FirstLevelDivision> getFirstLevelDivisionsList() {
-        ObservableList<FirstLevelDivision> firstLevelDivisionsList = FXCollections.observableArrayList();
+    public static void updateCustomer(String customerId, String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) {
+        try {
+            connection.createStatement().executeUpdate(String.format("UPDATE customers"
+                            + " SET Customer_Name='%s', Address='%s', Postal_Code='%s', Phone='%s', Last_Update=NOW(), Last_Updated_By='%s', Division_ID='%s'"
+                            + " WHERE Customer_ID='%s'",
+                    name, address, zip, phone, userId, firstLevelDivisionId, Integer.parseInt(customerId)));
+        } catch (Exception ex) {
+            System.out.println(ex);
+            ex.printStackTrace();
+        }
+    }
+
+    public static void addCustomer(String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) throws SQLException {
+        connection.createStatement().executeUpdate(String.format("INSERT INTO customers "
+                        + "(Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) " +
+                        "VALUES ('%s', '%s', '%s', '%s', NOW(), '%s', NOW(), '%s', '%s')",
+                name, address, zip, phone, userId, userId, firstLevelDivisionId));
+    }
+
+    public static ObservableList<String> getFirstLevelDivisionsList() {
+        ObservableList<String> firstLevelDivisionsList = FXCollections.observableArrayList();
 
         try {
             ResultSet results = connection.createStatement().executeQuery("SELECT Division_ID, Division, Country_ID FROM first_level_divisions;");
             while(results.next()) {
-                FirstLevelDivision newFirstLevelDivision = new FirstLevelDivision(
-                        results.getInt("Division_ID"),
-                        results.getInt("Country_ID"),
-                        results.getString("Division"));
-                firstLevelDivisionsList.add(newFirstLevelDivision);
+                firstLevelDivisionsList.add(results.getString("Division"));
             }
         } catch (SQLException exception) {
             exception.printStackTrace();
@@ -146,17 +164,13 @@ public class Query {
         return customersList;
     }
 
-    public static ObservableList<Country> getCountriesList() {
-        ObservableList<Country> countriesList = FXCollections.observableArrayList();
+    public static ObservableList<String> getCountriesList() {
+        ObservableList<String> countriesList = FXCollections.observableArrayList();
 
         try {
             ResultSet results = connection.createStatement().executeQuery("SELECT Country_ID, Country from countries;");
             while(results.next()) {
-                Country newCountry = new Country(
-                        results.getInt("Country_ID"),
-                        results.getString("Country")
-                );
-                countriesList.add(newCountry);
+                countriesList.add(results.getString("Country"));
             }
         } catch (SQLException ex) {
             System.out.println("Error with getting all countries");
