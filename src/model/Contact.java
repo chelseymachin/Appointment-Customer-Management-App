@@ -12,6 +12,11 @@ public class Contact {
         this.email = email;
     }
 
+    public Contact(Integer contactId, String name) {
+        this.contactID = contactId;
+        this.name = name;
+    }
+
     public Integer getContactID() {
         return contactID;
     }

@@ -164,13 +164,19 @@ public class AppointmentScreen implements Initializable {
 
         PreparedStatement prepared = null;
         String sql = null;
+
+        Integer apptId = null;
+        if (!apptIdInput.getText().isEmpty()) {
+            apptId = Integer.parseInt(apptIdInput.getText());
+        }
+
+
         String apptType = apptTypeInput.getText();
         String apptTitle = apptTitleInput.getText();
         String apptLocation = apptLocationInput.getText();
         String apptDescription = apptDescriptionInput.getText();
-        String apptContact = apptContactComboBox.getValue().toString();
-        String apptCustomer = apptCustomerComboBox.getValue().toString();
-        // add a customer contact here that mirrors above (might need new combo box for just customer IDs)
+        Integer apptContact = Integer.parseInt(apptContactComboBox.getValue().toString().substring(0, 1));
+        Integer apptCustomer = Integer.parseInt(apptCustomerComboBox.getValue().toString().substring(0, 1));
         LocalDate apptDate = apptDatePicker.getValue();
         LocalDateTime apptStart = LocalDateTime.of(apptDate, LocalTime.parse(apptStartTimeComboBox.getValue().toString().substring(0,5)));
         startTimestamp = Timestamp.valueOf(apptStart);
@@ -188,8 +194,8 @@ public class AppointmentScreen implements Initializable {
             prepared.setTimestamp(5, startTimestamp);
             prepared.setTimestamp(6, endTimestamp);
             prepared.setInt(7, userId);
-            prepared.setString(8, apptContact);
-            prepared.setInt(9, Integer.parseInt(this.apptIdInput.getText()));
+            prepared.setInt(8, apptContact);
+            prepared.setInt(9, apptId);
 
             int result = prepared.executeUpdate();
             if (result > 0) {
@@ -214,8 +220,8 @@ public class AppointmentScreen implements Initializable {
             prepared.setInt(7, userId);
             prepared.setInt(8, userId);
             prepared.setInt(9, Integer.valueOf(userId));
-            prepared.setString(10, apptContact);
-            prepared.setInt(11, Integer.valueOf(apptCustomer));
+            prepared.setInt(10, apptContact);
+            prepared.setInt(11, apptCustomer);
 
             int result = prepared.executeUpdate();
             if (result > 0) {
@@ -242,7 +248,8 @@ public class AppointmentScreen implements Initializable {
             apptTitleInput.setText(selectedAppointment.getTitle());
             apptLocationInput.setText(selectedAppointment.getLocation());
             apptDescriptionInput.setText(selectedAppointment.getDescription());
-            apptContactComboBox.setValue(selectedAppointment.getContactId());
+            apptContactComboBox.getSelectionModel().select(selectedAppointment.getContactId());
+            apptCustomerComboBox.getSelectionModel().select(selectedAppointment.getCustomerId());
             apptDatePicker.setValue(selectedAppointment.getDate());
             apptStartTimeComboBox.setValue(selectedAppointment.getStartTime());
             apptEndTimeComboBox.setValue(selectedAppointment.getEndTime());
