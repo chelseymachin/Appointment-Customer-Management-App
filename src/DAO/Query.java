@@ -2,15 +2,16 @@ package DAO;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import model.Contact;
+import javafx.scene.control.Alert;
 import model.Country;
-import model.Customer;
 import model.FirstLevelDivision;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import static DAO.DatabaseConnection.connection;
 
@@ -46,8 +47,7 @@ public class Query {
                             + " WHERE Customer_ID='%s'",
                     name, address, zip, phone, userId, firstLevelDivisionId, Integer.parseInt(customerId)));
         } catch (Exception ex) {
-            System.out.println(ex);
-            ex.printStackTrace();
+            System.out.println(ex.getMessage());
         }
     }
 
@@ -56,6 +56,24 @@ public class Query {
                         + "(Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) " +
                         "VALUES ('%s', '%s', '%s', '%s', NOW(), '%s', NOW(), '%s', '%s')",
                 name, address, zip, phone, userId, userId, firstLevelDivisionId));
+    }
+
+    public static void updateAppointment(String appointmentId, String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) {
+        try {
+            connection.createStatement().executeUpdate(String.format("Update appointments"
+                + " SET Title='%s', Description='%s', Location='%s', Type='%s', Start='%s', End='%s', Last_Update=NOW(), Last_Updated_By='%s', Customer_ID='%s', Contact_ID='%s'"
+                + " WHERE Appointment_ID='%s'",
+                    title, description, location, type, apptStart, apptEnd, userId, customerId, contactId, appointmentId));
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    public static void addAppointment(String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) throws SQLException {
+            connection.createStatement().executeUpdate(String.format("INSERT INTO appointments "
+                + "(Title, Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) "
+                + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', NOW(), '%s', NOW(), '%s', '%s', '%s', '%s')",
+                    title, description, location, type, apptStart, apptEnd, userId, userId, customerId, userId, contactId));
     }
 
     public static ObservableList<String> getFirstLevelDivisionsList() {
@@ -146,17 +164,13 @@ public class Query {
 
     }
 
-    public static ObservableList<Customer> getCustomersList() {
-        ObservableList<Customer> customersList = FXCollections.observableArrayList();
+    public static ObservableList<String> getCustomersList() {
+        ObservableList<String> customersList = FXCollections.observableArrayList();
 
         try {
             ResultSet results = connection.createStatement().executeQuery("SELECT Customer_ID, Customer_Name from customers;");
             while(results.next()) {
-                Customer newCust = new Customer(
-                        results.getInt("Customer_ID"),
-                        results.getString("Customer_Name")
-                );
-                customersList.add(newCust);
+                customersList.add(results.getString("Customer_ID"));
             }
         } catch (Exception exception) {
             System.out.println("Error in getting all customers list");
@@ -178,36 +192,38 @@ public class Query {
         return countriesList;
     }
 
-    public static ObservableList<String> getStartTimes() {
-        startTimes.add("08:00");
-        startTimes.add("08:30");
-        startTimes.add("09:00");
-        startTimes.add("09:30");
-        startTimes.add("10:00");
-        startTimes.add("10:30");
-        startTimes.add("11:00");
-        startTimes.add("11:30");
-        startTimes.add("12:00");
-        startTimes.add("12:30");
-        startTimes.add("13:00");
-        startTimes.add("13:30");
-        startTimes.add("14:00");
-        startTimes.add("14:30");
-        startTimes.add("15:00");
-        startTimes.add("15:30");
-        startTimes.add("16:00");
-        startTimes.add("16:30");
-        startTimes.add("17:00");
-        startTimes.add("17:30");
-        startTimes.add("18:00");
-        startTimes.add("18:30");
-        startTimes.add("19:00");
-        startTimes.add("19:30");
-        startTimes.add("20:00");
-        startTimes.add("20:30");
-        startTimes.add("21:00");
-        startTimes.add("21:30");
-        return startTimes;
+    public static ObservableList<String> getApptStartTimes() {
+        ObservableList<String> apptStartTimes = FXCollections.observableArrayList();
+
+        for (int i = 8; i < 22; i++ ) {
+            if (i < 10) {
+                String newAppt1 = LocalTime.parse("0" + i + ":00").toString();
+                apptStartTimes.add(newAppt1);
+                String newAppt2 = LocalTime.parse("0" + i + ":15").toString();
+                apptStartTimes.add(newAppt2);
+                String newAppt3 = LocalTime.parse("0" + i + ":30").toString();
+                apptStartTimes.add(newAppt3);
+                String newAppt4 = LocalTime.parse("0" + i + ":45").toString();
+                apptStartTimes.add(newAppt4);
+            } else {
+                String newAppt1 = LocalTime.parse(i + ":00").toString();
+                apptStartTimes.add(newAppt1);
+                String newAppt2 = LocalTime.parse(i + ":15").toString();
+                apptStartTimes.add(newAppt2);
+                String newAppt3 = LocalTime.parse(i + ":30").toString();
+                apptStartTimes.add(newAppt3);
+                String newAppt4 = LocalTime.parse(i + ":45").toString();
+                apptStartTimes.add(newAppt4);
+            }
+        }
+            return apptStartTimes;
+    }
+
+    public static ObservableList<String> getApptEndTimes() {
+        ObservableList<String> apptEndTimes = FXCollections.observableArrayList();
+        apptEndTimes.addAll(getApptStartTimes());
+        apptEndTimes.add(LocalTime.parse("22:00").toString());
+        return apptEndTimes;
     }
 
     public static void deleteAppt(String apptId) {
@@ -218,17 +234,40 @@ public class Query {
         }
     }
 
-    public static ObservableList<Contact> getContacts() {
-        ObservableList<Contact> contactsList = FXCollections.observableArrayList();
+    public static void deleteCustomer(String customerId) {
+        if (checkForCustomerAppointments(customerId)) {
+            Alert a = new Alert(Alert.AlertType.ERROR);
+            a.setContentText("You cannot delete a customer that has open appointments!  Please delete this customer's appointments first before trying to delete the customer again.");
+            a.showAndWait();
+        } else {
+            try {
+                connection.createStatement().executeUpdate(String.format("DELETE FROM customers WHERE Customer_ID='%s'", customerId));
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
+    }
+
+    public static Boolean checkForCustomerAppointments(String customerId) {
+        Boolean hasAppointments = false;
+
+        try {
+            ResultSet results = connection.createStatement().executeQuery(String.format("SELECT * FROM appointments WHERE Customer_ID='%s'", customerId));
+            while(results.next()) {
+                hasAppointments = true;
+            }
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+        return hasAppointments;
+    }
+
+    public static ObservableList<String> getContacts() {
+        ObservableList<String> contactsList = FXCollections.observableArrayList();
         try {
             ResultSet results = connection.createStatement().executeQuery("SELECT Contact_ID, Contact_Name, Email from contacts;");
             while(results.next()) {
-                Contact newContact = new Contact(
-                    results.getInt("Contact_ID"),
-                    results.getString("Contact_Name"),
-                    results.getString("Email")
-                );
-                contactsList.add(newContact);
+                contactsList.add(results.getString("Contact_ID"));
             }
         } catch (Exception exception) {
             System.out.println("Error in getting all contacts list");

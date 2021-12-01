@@ -15,13 +15,14 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import model.Appointment;
-import model.Contact;
-import model.Customer;
 import model.User;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -60,16 +61,18 @@ public class AppointmentScreen implements Initializable {
     @FXML private TableColumn<Appointment, String> customerIdCol;
     @FXML private TableColumn<Appointment, String> userIdCol;
     ObservableList<Appointment> appointmentsObservableList = FXCollections.observableArrayList();
-    ObservableList<Contact> contactsList = FXCollections.observableArrayList();
-    ObservableList<Customer> customersList = FXCollections.observableArrayList();
+    ObservableList<String> contactsList = FXCollections.observableArrayList();
+    ObservableList<String> customersList = FXCollections.observableArrayList();
+    ObservableList<String> apptTimesList = FXCollections.observableArrayList();
     Appointment selectedAppointment;
-    Stage stage;
+    private ToggleGroup viewSelection;
+    private boolean isViewByWeek;
+    private boolean isViewByMonth;
     Timestamp startTimestamp = null;
     Timestamp endTimestamp = null;
     User currentUser;
 
-    public static void passCurrentUserData(User currentUser) {
-    }
+    public static void passCurrentUserData(User currentUser) {}
 
     @FXML public void logout(javafx.event.ActionEvent event) throws IOException {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -153,89 +156,93 @@ public class AppointmentScreen implements Initializable {
                         results.getString("Contact_ID")));
             }
             apptsTable.setItems(appointmentsObservableList);
+
+            apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
+            customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+            titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
+            descriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
+            locationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
+            contactCol.setCellValueFactory(new PropertyValueFactory<>("contactId"));
+            typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+            dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
+            startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
+            endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
+            userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
         } catch (SQLException ex) {
             System.out.println("Error getting all appointments");
         }
     }
 
     public void saveApptButtonHandler(javafx.event.ActionEvent event) throws SQLException, IOException {
-        Connection connection;
-        connection = DAO.DatabaseConnection.openConnection();
-
-        PreparedStatement prepared = null;
-        String sql = null;
-
-        Integer apptId = null;
-        if (!apptIdInput.getText().isEmpty()) {
-            apptId = Integer.parseInt(apptIdInput.getText());
-        }
-
-
-        String apptType = apptTypeInput.getText();
-        String apptTitle = apptTitleInput.getText();
-        String apptLocation = apptLocationInput.getText();
-        String apptDescription = apptDescriptionInput.getText();
-        Integer apptContact = Integer.parseInt(apptContactComboBox.getValue().toString().substring(0, 1));
-        Integer apptCustomer = Integer.parseInt(apptCustomerComboBox.getValue().toString().substring(0, 1));
-        LocalDate apptDate = apptDatePicker.getValue();
-        LocalDateTime apptStart = LocalDateTime.of(apptDate, LocalTime.parse(apptStartTimeComboBox.getValue().toString().substring(0,5)));
-        startTimestamp = Timestamp.valueOf(apptStart);
-        LocalDateTime apptEnd = LocalDateTime.of(apptDate, LocalTime.parse(apptEndTimeComboBox.getValue().toString().substring(0, 5)));
-        endTimestamp = Timestamp.valueOf(apptEnd);
+        String apptId;
+        String apptTitle = null;
+        String apptType = null;
+        String apptLocation = null;
+        String apptDescription = null;
+        Integer apptContact = null;
+        Integer apptCustomer = null;
+        LocalDateTime start = null;
+        LocalDateTime end = null;
         Integer userId = currentUser.getUserId();
 
-        if (!apptIdInput.getText().isEmpty()) {
-            sql = "UPDATE appointments SET Title = ?, Description = ?, Location = ?, Type = ?, Start = ?, End = ?, Last_Update = NOW(), Last_Updated_By = ?, Contact_ID = ? WHERE Appointment_ID = ?";
-            prepared = connection.prepareStatement(sql);
-            prepared.setString(1, apptTitle);
-            prepared.setString(2, apptDescription);
-            prepared.setString(3, apptLocation);
-            prepared.setString(4, apptType);
-            prepared.setTimestamp(5, startTimestamp);
-            prepared.setTimestamp(6, endTimestamp);
-            prepared.setInt(7, userId);
-            prepared.setInt(8, apptContact);
-            prepared.setInt(9, apptId);
 
-            int result = prepared.executeUpdate();
-            if (result > 0) {
-                Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
-                Scene scene = new Scene(parent);
-                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                stage.setScene(scene);
-                stage.setTitle("Appointments");
-                stage.show();
-            } else {
-                System.out.println("No update happened!");
-            }
+        if (apptTypeInput.getText().isEmpty() || apptTitleInput.getText().isEmpty() || apptLocationInput.getText().isEmpty() || apptDescriptionInput.getText().isEmpty() || apptContactComboBox.getSelectionModel().isEmpty() || apptCustomerComboBox.getSelectionModel().isEmpty() || apptDatePicker.getValue() == null || apptStartTimeComboBox.getSelectionModel().isEmpty() || apptEndTimeComboBox.getSelectionModel().isEmpty()) {
+            Alert a = new Alert(Alert.AlertType.ERROR);
+            a.setContentText("Please enter a value/selection for all fields in order to save!");
+            a.showAndWait();
         } else {
-            sql = "INSERT INTO appointments (Title, Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, User_ID, Contact_ID, Customer_ID) VALUES  (?, ?, ?, ?, ?, ?, NOW(), ?, NOW(), ?, ?, ?, ?)";
-            prepared = connection.prepareStatement(sql);
-            prepared.setString(1, apptTitle);
-            prepared.setString(2, apptDescription);
-            prepared.setString(3, apptLocation);
-            prepared.setString(4, apptType);
-            prepared.setTimestamp(5, startTimestamp);
-            prepared.setTimestamp(6, endTimestamp);
-            prepared.setInt(7, userId);
-            prepared.setInt(8, userId);
-            prepared.setInt(9, Integer.valueOf(userId));
-            prepared.setInt(10, apptContact);
-            prepared.setInt(11, apptCustomer);
+            apptTitle = apptTitleInput.getText();
+            apptType = apptTypeInput.getText();
+            apptLocation = apptLocationInput.getText();
+            apptDescription = apptDescriptionInput.getText();
+            apptContact = Integer.parseInt(apptContactComboBox.getValue().toString());
+            apptCustomer = Integer.parseInt(apptCustomerComboBox.getValue().toString());
 
-            int result = prepared.executeUpdate();
-            if (result > 0) {
-                Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
-                Scene scene = new Scene(parent);
-                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                stage.setScene(scene);
-                stage.setTitle("Appointments");
-                stage.show();
-            } else {
-                System.out.println("No appts were made!");
-            }
-
+            LocalDate apptDate = apptDatePicker.getValue();
+            LocalTime apptStart = LocalTime.parse(apptStartTimeComboBox.getValue().toString());
+            LocalTime apptEnd = LocalTime.parse(apptEndTimeComboBox.getValue().toString());
+            start = LocalDateTime.of(apptDate, apptStart);
+            end = LocalDateTime.of(apptDate, apptEnd);
         }
+
+        if (!apptIdInput.getText().isEmpty()) {
+            apptId = apptIdInput.getText();
+            Query.updateAppointment(
+                    apptId,
+                    apptTitle,
+                    apptType,
+                    apptLocation,
+                    apptDescription,
+                    apptContact,
+                    apptCustomer,
+                    start,
+                    end,
+                    userId
+            );
+        } else {
+            try {
+                Query.addAppointment(
+                        apptTitle,
+                        apptType,
+                        apptLocation,
+                        apptDescription,
+                        apptContact,
+                        apptCustomer,
+                        start,
+                        end,
+                        userId
+                );
+            } catch (SQLException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
+
+        Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
+        Scene scene = new Scene(parent);
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        stage.setScene(scene);
+        stage.setTitle("Appointments");
+        stage.show();
 
     }
 
@@ -251,8 +258,8 @@ public class AppointmentScreen implements Initializable {
             apptContactComboBox.getSelectionModel().select(selectedAppointment.getContactId());
             apptCustomerComboBox.getSelectionModel().select(selectedAppointment.getCustomerId());
             apptDatePicker.setValue(selectedAppointment.getDate());
-            apptStartTimeComboBox.setValue(selectedAppointment.getStartTime());
-            apptEndTimeComboBox.setValue(selectedAppointment.getEndTime());
+            apptStartTimeComboBox.getSelectionModel().select(selectedAppointment.getStartTime());
+            apptEndTimeComboBox.getSelectionModel().select(selectedAppointment.getEndTime());
         } else {
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please select an appointment in order to edit it!");
@@ -280,29 +287,23 @@ public class AppointmentScreen implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         apptIdInput.setDisable(true);
+
+        // Prevents observable list from copying on page navs; uses query to generate list of customers and then adds to combo box results
         customersList.clear();
-        customersList = DAO.Query.getCustomersList();
-        contactsList.clear();
-        contactsList = DAO.Query.getContacts();
-
-
-        apptStartTimeComboBox.setItems(DAO.Query.getStartTimes());
-        apptContactComboBox.setItems(contactsList);
+        customersList = Query.getCustomersList();
         apptCustomerComboBox.setItems(customersList);
-        apptEndTimeComboBox.setItems(DAO.Query.getStartTimes());
+
+        // Prevents observable list from copying on page navs; uses query to generate list of contacts and then adds to combo box results
+        contactsList.clear();
+        contactsList = Query.getContacts();
+        apptContactComboBox.setItems(contactsList);
+        apptTimesList.clear();
+
+        apptStartTimeComboBox.setItems(Query.getApptStartTimes());
+        apptEndTimeComboBox.setItems(Query.getApptEndTimes());
+
         viewAllAppts();
 
-        apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
-        customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
-        titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-        descriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
-        locationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
-        contactCol.setCellValueFactory(new PropertyValueFactory<>("contactId"));
-        typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-        dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
-        startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
-        endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
-        userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
     }
 
 

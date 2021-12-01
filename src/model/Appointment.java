@@ -13,8 +13,8 @@ public class Appointment {
     String type;
     String url;
     LocalDate date;
-    LocalTime startTime;
-    LocalTime endTime;
+    String startTime;
+    String endTime;
     String user;
     String customerId;
     String userId;
@@ -35,8 +35,8 @@ public class Appointment {
         this.type = type;
         this.user = user;
         this.date = date;
-        this.startTime = start;
-        this.endTime = end;
+        this.startTime = start.toString();
+        this.endTime = end.toString();
     }
 
     public Appointment(String appointmentId, String customerId, String title, String description, String location, String type, String date, String start, String end, String userId, String contactId) {
@@ -47,8 +47,8 @@ public class Appointment {
         this.location = location;
         this.type = type;
         this.date = LocalDate.parse(date.substring(0, 10));
-        this.startTime = LocalTime.parse(start.substring(11, 16));
-        this.endTime = LocalTime.parse(end.substring(11, 16));
+        this.startTime = start;
+        this.endTime = end;
         this.userId = userId;
         this.contactId = contactId;
     }
@@ -64,8 +64,8 @@ public class Appointment {
         this.user = user;
         this.url = url;
         this.date = LocalDate.parse(date);
-        this.startTime = LocalTime.parse(start);
-        this.endTime = LocalTime.parse(end);
+        this.startTime = start;
+        this.endTime = end;
     }
 
     // Getter & Setter Methods
@@ -134,19 +134,19 @@ public class Appointment {
         this.date = date;
     }
 
-    public LocalTime getStartTime() {
-        return startTime;
+    public String getStartTime() {
+        return startTime.substring(11, 16);
     }
 
-    public void setStartTime(LocalTime start) {
+    public void setStartTime(String start) {
         this.startTime = start;
     }
 
-    public LocalTime getEndTime() {
-        return endTime;
+    public String getEndTime() {
+        return endTime.substring(11, 16);
     }
 
-    public void setEndTime(LocalTime end) {
+    public void setEndTime(String end) {
         this.endTime = end;
     }
 

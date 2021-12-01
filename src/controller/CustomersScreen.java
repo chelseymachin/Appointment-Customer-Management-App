@@ -149,7 +149,13 @@ public class CustomersScreen implements Initializable {
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.get() == ButtonType.OK) {
-
+            Query.deleteCustomer(selectedCustomer.getCustomerId().toString());
+            Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
+            Scene scene = new Scene(parent);
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Customers");
+            stage.show();
         }
     }
 
@@ -206,7 +212,6 @@ public class CustomersScreen implements Initializable {
             customerNameInput.setText(selectedCustomer.getName());
             customerAddressInput.setText(selectedCustomer.getAddress());
             postalCodeInput.setText(selectedCustomer.getZip());
-
             countryComboBox.setValue(selectedCustomer.getCountryName());
             stateComboBox.setValue(selectedCustomer.getFirstLevelDivisionName());
             customerPhoneInput.setText(selectedCustomer.getPhoneNumber());

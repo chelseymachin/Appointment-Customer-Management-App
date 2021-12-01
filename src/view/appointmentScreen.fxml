@@ -5,14 +5,14 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane fx:id="apptsScreenPane" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.AppointmentScreen">
+<AnchorPane fx:id="apptsScreenPane" prefHeight="800.0" prefWidth="800.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.AppointmentScreen">
    <children>
-      <ImageView fitHeight="381.0" fitWidth="411.0" layoutX="407.0" layoutY="-21.0" opacity="0.87" pickOnBounds="true" preserveRatio="true" style="-fx-background-color: #C1CEFE;">
+      <ImageView fitHeight="381.0" fitWidth="411.0" layoutX="419.0" layoutY="-21.0" opacity="0.87" pickOnBounds="true" preserveRatio="true" style="-fx-background-color: #C1CEFE;">
          <image>
             <Image url="@../assets/appointmentScreenHeader.png" />
          </image>
       </ImageView>
-      <TableView fx:id="apptsTable" layoutX="5.0" layoutY="243.0" prefHeight="306.0" prefWidth="788.0" stylesheets="@styles/tableViewStyles.css">
+      <TableView fx:id="apptsTable" layoutX="6.0" layoutY="307.0" prefHeight="417.0" prefWidth="788.0" stylesheets="@styles/tableViewStyles.css">
         <columns>
             <TableColumn fx:id="apptIdCol" prefWidth="57.0" text="Appt ID" />
             <TableColumn fx:id="customerIdCol" prefWidth="81.0" text="Customer ID" />
@@ -27,17 +27,17 @@
             <TableColumn fx:id="userIdCol" prefWidth="50.0" text="User ID" />
         </columns>
       </TableView>
-      <Button fx:id="customersButton" layoutX="7.0" layoutY="553.0" mnemonicParsing="false" onAction="#customersButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Customers">
+      <Button fx:id="customersButton" layoutX="15.0" layoutY="747.0" mnemonicParsing="false" onAction="#customersButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Customers">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button fx:id="reportsButton" layoutX="121.0" layoutY="553.0" mnemonicParsing="false" onAction="#reportsButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Reports">
+      <Button fx:id="reportsButton" layoutX="134.0" layoutY="747.0" mnemonicParsing="false" onAction="#reportsButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Reports">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button fx:id="logoutButton" layoutX="710.0" layoutY="553.0" mnemonicParsing="false" onAction="#logout" opacity="0.84" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Logout" textFill="#809cff">
+      <Button fx:id="logoutButton" layoutX="705.0" layoutY="747.0" mnemonicParsing="false" onAction="#logout" opacity="0.84" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Logout" textFill="#809cff">
          <font>
             <Font size="18.0" />
          </font>
@@ -47,17 +47,17 @@
             <Font name="System Bold" size="36.0" />
          </font>
       </Label>
-      <Button fx:id="saveApptButton" layoutX="646.0" layoutY="197.0" mnemonicParsing="false" onAction="#saveApptButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Save">
+      <Button fx:id="saveApptButton" layoutX="124.0" layoutY="244.0" mnemonicParsing="false" onAction="#saveApptButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Save">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button fx:id="deleteApptButton" layoutX="715.0" layoutY="197.0" mnemonicParsing="false" onAction="#deleteApptButtonHandler" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Delete" textFill="#809cff">
+      <Button fx:id="deleteApptButton" layoutX="192.0" layoutY="244.0" mnemonicParsing="false" onAction="#deleteApptButtonHandler" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Delete" textFill="#809cff">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button fx:id="editApptButton" layoutX="583.0" layoutY="197.0" mnemonicParsing="false" onAction="#editApptButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Edit">
+      <Button fx:id="editApptButton" layoutX="62.0" layoutY="244.0" mnemonicParsing="false" onAction="#editApptButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Edit">
          <font>
             <Font size="18.0" />
          </font>
@@ -127,5 +127,24 @@
          </font>
       </Label>
       <ComboBox fx:id="apptCustomerComboBox" layoutX="391.0" layoutY="80.0" prefHeight="25.0" prefWidth="55.0" style="-fx-background-color: #ff6b6b;" />
+      <ToggleButton fx:id="viewMonthToggle" layoutX="618.0" layoutY="244.0" mnemonicParsing="false" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View Month" textAlignment="CENTER" wrapText="true">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+         <toggleGroup>
+            <ToggleGroup fx:id="viewSelection" />
+         </toggleGroup>
+      </ToggleButton>
+      <ToggleButton fx:id="viewWeekToggle" layoutX="705.0" layoutY="244.0" mnemonicParsing="false" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View Week" textAlignment="CENTER" toggleGroup="$viewSelection" wrapText="true">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </ToggleButton>
+      <ToggleButton fx:id="viewAllToggle" layoutX="529.0" layoutY="244.0" mnemonicParsing="false" onAction="#viewAllAppts" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View All" textAlignment="CENTER" toggleGroup="$viewSelection" wrapText="true">
+         <font>
+            <Font name="System Bold" size="13.0" />
+         </font>
+      </ToggleButton>
+      <DatePicker fx:id="viewAppointmentsDatePicker" layoutX="618.0" layoutY="214.0" prefHeight="25.0" prefWidth="168.0" stylesheets="@styles/datePickerStyles.css" />
    </children>
 </AnchorPane>
