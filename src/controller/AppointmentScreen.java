@@ -151,20 +151,23 @@ public class AppointmentScreen implements Initializable {
                 connection = DatabaseConnection.openConnection();
                 ResultSet results = connection.createStatement().executeQuery(String.format("SELECT * FROM customers c INNER JOIN appointments a ON c.Customer_ID = a.Customer_ID WHERE WEEK(DATE(Start))+1 = '%s' AND YEAR(Start) = '%s' ORDER BY Start;", selectedWeek, selectedYear));
                 while (results.next()) {
-                    appointmentsByWeekObservableList.add(new Appointment(
+                    LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
+                    LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
+
+                    appointmentsObservableList.add(new Appointment(
                             results.getString("Appointment_ID"),
                             results.getString("Customer_ID"),
                             results.getString("Title"),
                             results.getString("Description"),
                             results.getString("Location"),
                             results.getString("Type"),
-                            results.getString("Start"),
-                            results.getString("Start"),
-                            results.getString("End"),
+                            apptStartConvertedToUserTime.toString(),
+                            apptStartConvertedToUserTime.toString(),
+                            apptEndConvertedToUserTime.toString(),
                             results.getString("User_ID"),
                             results.getString("Contact_ID")));
                 }
-                apptsTable.setItems(appointmentsByWeekObservableList);
+                apptsTable.setItems(appointmentsObservableList);
 
                 apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
                 customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
@@ -199,20 +202,23 @@ public class AppointmentScreen implements Initializable {
                 connection = DatabaseConnection.openConnection();
                 ResultSet results = connection.createStatement().executeQuery(String.format("SELECT * FROM customers c INNER JOIN appointments a ON c.Customer_ID = a.Customer_ID WHERE MONTH(Start) = '%s' AND YEAR(Start) = '%s' ORDER BY Start", selectedMonth, selectedYear));
                 while (results.next()) {
-                    appointmentsByMonthObservableList.add(new Appointment(
+                    LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
+                    LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
+
+                    appointmentsObservableList.add(new Appointment(
                             results.getString("Appointment_ID"),
                             results.getString("Customer_ID"),
                             results.getString("Title"),
                             results.getString("Description"),
                             results.getString("Location"),
                             results.getString("Type"),
-                            results.getString("Start"),
-                            results.getString("Start"),
-                            results.getString("End"),
+                            apptStartConvertedToUserTime.toString(),
+                            apptStartConvertedToUserTime.toString(),
+                            apptEndConvertedToUserTime.toString(),
                             results.getString("User_ID"),
                             results.getString("Contact_ID")));
                 }
-                apptsTable.setItems(appointmentsByMonthObservableList);
+                apptsTable.setItems(appointmentsObservableList);
 
                 apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
                 customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
@@ -238,6 +244,9 @@ public class AppointmentScreen implements Initializable {
             connection = DatabaseConnection.openConnection();
             ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments, customers, users, contacts WHERE appointments.User_ID = users.User_ID AND appointments.Contact_ID = contacts.Contact_ID AND appointments.Customer_ID = customers.Customer_ID ORDER BY Start;");
             while (results.next()) {
+                LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
+                LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
+
                 appointmentsObservableList.add(new Appointment(
                         results.getString("Appointment_ID"),
                         results.getString("Customer_ID"),
@@ -245,9 +254,9 @@ public class AppointmentScreen implements Initializable {
                         results.getString("Description"),
                         results.getString("Location"),
                         results.getString("Type"),
-                        results.getString("Start"),
-                        results.getString("Start"),
-                        results.getString("End"),
+                        apptStartConvertedToUserTime.toString(),
+                        apptStartConvertedToUserTime.toString(),
+                        apptEndConvertedToUserTime.toString(),
                         results.getString("User_ID"),
                         results.getString("Contact_ID")));
             }
@@ -269,26 +278,34 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
-    public static LocalDateTime stringDateToConvertedLDT(String time, String date) {
-        DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDateTime convertedLDT =  LocalDateTime.parse(date + " " + time + ":00", format).atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
-        return convertedLDT;
+    public static LocalDateTime stringToLDTConverter(String time, String date) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime ldt = LocalDateTime.parse(date + " " + time + ":00", formatter);
+        return ldt;
     }
 
-    public boolean isItWithinBusinessHours(String selectedDate, String apptStart, String apptEnd) {
-        LocalTime businessOpen = LocalTime.parse("07:59");
-        LocalTime businessClose = LocalTime.parse("22:01");
+    public static LocalDateTime usersLDTToUTC(LocalDateTime usersLocalDateTime) {
+        return usersLocalDateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
+    }
 
-        LocalDateTime LDTofStartConverted = stringDateToConvertedLDT(apptStart, selectedDate);
-        LocalDateTime LDTofEndConverted = stringDateToConvertedLDT(apptEnd, selectedDate);
+    public static LocalDateTime usersLDTToEST(LocalDateTime usersLocalDateTime) {
+        return usersLocalDateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("EST", ZoneId.SHORT_IDS)).toLocalDateTime();
+    }
 
-        String convertedStartString = LDTofStartConverted.toString().substring(11, 16);
-        String convertedEndString = LDTofEndConverted.toString().substring(11, 16);
+    public static LocalDateTime utcToUsersLDT(LocalDateTime utcLocalDateTime) {
+        return utcLocalDateTime.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.of("EST", ZoneId.SHORT_IDS)).toLocalDateTime();
+    }
 
-        LocalTime startStringConvertedToLT = LocalTime.parse(convertedStartString);
-        LocalTime endStringConvertedToLT = LocalTime.parse(convertedEndString);
+    public boolean isItWithinBusinessHours(LocalDateTime start, LocalDateTime end) {
+        LocalDateTime startConvertedToEST = usersLDTToEST(start);
+        LocalDateTime endConvertedToEST = usersLDTToEST(end);
 
-        if(startStringConvertedToLT.isBefore(businessOpen) || endStringConvertedToLT.isAfter(businessClose)) {
+        LocalTime startLDTconvertedToLT = LocalTime.parse(startConvertedToEST.toString().substring(11, 16));
+        LocalTime endLDTConvertedToLT = LocalTime.parse(endConvertedToEST.toString().substring(11, 16));
+        LocalTime openLT = LocalTime.of(07, 59);
+        LocalTime closeLT = LocalTime.of(22, 01);
+
+        if(startLDTconvertedToLT.isBefore(openLT) || endLDTConvertedToLT.isAfter(closeLT)) {
             return false;
         } else {
             return true;
@@ -303,8 +320,12 @@ public class AppointmentScreen implements Initializable {
         String apptDescription = null;
         Integer apptContact = null;
         Integer apptCustomer = null;
-        LocalDateTime start = null;
-        LocalDateTime end = null;
+        LocalDateTime startLocal = null;
+        LocalDateTime startEST = null;
+        LocalDateTime startUTC = null;
+        LocalDateTime endLocal = null;
+        LocalDateTime endEST = null;
+        LocalDateTime endUTC = null;
         Integer userId = currentUser.getUserId();
 
 
@@ -323,14 +344,19 @@ public class AppointmentScreen implements Initializable {
             String apptDateString = apptDate.toString();
 
             String apptStart = apptStartTimeComboBox.getValue().toString();
+            startLocal = stringToLDTConverter(apptStart, apptDateString);
+            startEST = usersLDTToEST(startLocal);
+            startUTC = usersLDTToUTC(startLocal);
+
             String apptEnd = apptEndTimeComboBox.getValue().toString();
+            endLocal = stringToLDTConverter(apptEnd, apptDateString);
+            endEST = usersLDTToEST(endLocal);
+            endUTC = usersLDTToUTC(endLocal);
 
-            start = stringDateToConvertedLDT(apptStart, apptDateString);
-            end = stringDateToConvertedLDT(apptEnd, apptDateString);
-
-            if (!isItWithinBusinessHours(apptDateString, apptStart, apptEnd)) {
+            // checks to see if the suggested appt start and end are within business hours.  If not, converts start and end to EST to display error.  If so, converts to UTC for database storage
+            if (!isItWithinBusinessHours(startEST, endEST)) {
                 Alert a = new Alert(Alert.AlertType.ERROR);
-                a.setContentText("Your appointment is set to begin at " + start.toString().substring(11,16) + " UTC and end at " + end.toString().substring(11,16) + " UTC, which is outside of our regular business hours. Please choose another start or end time!");
+                a.setContentText("Your appointment is set to begin at " + startEST.toString().substring(11, 16) + " EST and end at " + endEST.toString().substring(11, 16) + " EST, which is outside of our regular business hours (08:00 TO 22:00 EST). Please choose another start or end time!");
                 a.showAndWait();
                 return;
             }
@@ -345,8 +371,8 @@ public class AppointmentScreen implements Initializable {
                         apptDescription,
                         apptContact,
                         apptCustomer,
-                        start,
-                        end,
+                        startUTC,
+                        endUTC,
                         userId
                 );
                 Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
@@ -364,8 +390,8 @@ public class AppointmentScreen implements Initializable {
                             apptDescription,
                             apptContact,
                             apptCustomer,
-                            start,
-                            end,
+                            startUTC,
+                            endUTC,
                             userId
                     );
                     Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
@@ -445,8 +471,6 @@ public class AppointmentScreen implements Initializable {
                 super.updateItem(selectedDate, empty);
                 LocalDate currentDate = LocalDate.now();
                 setDisable(empty || selectedDate.compareTo(currentDate) < 0);
-                if(selectedDate.getDayOfWeek() == DayOfWeek.SATURDAY || selectedDate.getDayOfWeek() == DayOfWeek.SUNDAY)
-                    setDisable(true);
             }
         });
 
