@@ -70,10 +70,7 @@ public class Query {
     }
 
     public static void addAppointment(String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) throws SQLException {
-            connection.createStatement().executeUpdate(String.format("INSERT INTO appointments "
-                + "(Title, Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) "
-                + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', NOW(), '%s', NOW(), '%s', '%s', '%s', '%s')",
-                    title, description, location, type, apptStart, apptEnd, userId, userId, customerId, userId, contactId));
+            connection.createStatement().executeUpdate(String.format("INSERT INTO appointments (Title, Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', NOW(), '%s', NOW(), '%s', '%s', '%s', '%s')", title, description, location, type, apptStart, apptEnd, userId, userId, customerId, userId, contactId));
     }
 
     public static ObservableList<String> getFirstLevelDivisionsList() {
@@ -192,39 +189,34 @@ public class Query {
         return countriesList;
     }
 
-    public static ObservableList<String> getApptStartTimes() {
-        ObservableList<String> apptStartTimes = FXCollections.observableArrayList();
+    public static ObservableList<String> getApptTimes() {
+        ObservableList<String> apptTimes = FXCollections.observableArrayList();
 
-        for (int i = 8; i < 22; i++ ) {
+        for (int i = 1; i < 24; i++ ) {
             if (i < 10) {
                 String newAppt1 = LocalTime.parse("0" + i + ":00").toString();
-                apptStartTimes.add(newAppt1);
+                apptTimes.add(newAppt1);
                 String newAppt2 = LocalTime.parse("0" + i + ":15").toString();
-                apptStartTimes.add(newAppt2);
+                apptTimes.add(newAppt2);
                 String newAppt3 = LocalTime.parse("0" + i + ":30").toString();
-                apptStartTimes.add(newAppt3);
+                apptTimes.add(newAppt3);
                 String newAppt4 = LocalTime.parse("0" + i + ":45").toString();
-                apptStartTimes.add(newAppt4);
+                apptTimes.add(newAppt4);
             } else {
                 String newAppt1 = LocalTime.parse(i + ":00").toString();
-                apptStartTimes.add(newAppt1);
+                apptTimes.add(newAppt1);
                 String newAppt2 = LocalTime.parse(i + ":15").toString();
-                apptStartTimes.add(newAppt2);
+                apptTimes.add(newAppt2);
                 String newAppt3 = LocalTime.parse(i + ":30").toString();
-                apptStartTimes.add(newAppt3);
+                apptTimes.add(newAppt3);
                 String newAppt4 = LocalTime.parse(i + ":45").toString();
-                apptStartTimes.add(newAppt4);
+                apptTimes.add(newAppt4);
             }
         }
-            return apptStartTimes;
+            return apptTimes;
     }
 
-    public static ObservableList<String> getApptEndTimes() {
-        ObservableList<String> apptEndTimes = FXCollections.observableArrayList();
-        apptEndTimes.addAll(getApptStartTimes());
-        apptEndTimes.add(LocalTime.parse("22:00").toString());
-        return apptEndTimes;
-    }
+
 
     public static void deleteAppt(String apptId) {
         try {
@@ -274,6 +266,7 @@ public class Query {
         }
         return contactsList;
     }
+
 
 
 

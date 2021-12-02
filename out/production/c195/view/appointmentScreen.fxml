@@ -17,14 +17,14 @@
             <TableColumn fx:id="apptIdCol" prefWidth="57.0" text="Appt ID" />
             <TableColumn fx:id="customerIdCol" prefWidth="81.0" text="Customer ID" />
             <TableColumn fx:id="titleCol" prefWidth="97.0" text="Title" />
-            <TableColumn fx:id="descriptionCol" prefWidth="142.0" text="Description" />
-            <TableColumn fx:id="locationCol" prefWidth="73.0" text="Location" />
+            <TableColumn fx:id="descriptionCol" prefWidth="121.0" text="Description" />
+            <TableColumn fx:id="locationCol" prefWidth="94.0" text="Location" />
             <TableColumn fx:id="contactCol" prefWidth="59.0" text="Contact" />
             <TableColumn fx:id="typeCol" prefWidth="63.0" text="Type" />
-            <TableColumn fx:id="dateCol" prefWidth="71.0" text="Date" />
-            <TableColumn fx:id="startTimeCol" prefWidth="55.0" text="Start" />
-            <TableColumn fx:id="endTimeCol" prefWidth="45.0" text="End" />
-            <TableColumn fx:id="userIdCol" prefWidth="50.0" text="User ID" />
+            <TableColumn fx:id="dateCol" prefWidth="114.0" text="Date" />
+            <TableColumn fx:id="startTimeCol" prefWidth="61.0" text="Start" />
+            <TableColumn fx:id="endTimeCol" prefWidth="46.0" text="End" />
+            <TableColumn fx:id="userIdCol" minWidth="0.0" prefWidth="0.0" text="User ID" />
         </columns>
       </TableView>
       <Button fx:id="customersButton" layoutX="15.0" layoutY="747.0" mnemonicParsing="false" onAction="#customersButtonHandler" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Customers">
@@ -127,7 +127,7 @@
          </font>
       </Label>
       <ComboBox fx:id="apptCustomerComboBox" layoutX="391.0" layoutY="80.0" prefHeight="25.0" prefWidth="55.0" style="-fx-background-color: #ff6b6b;" />
-      <ToggleButton fx:id="viewMonthToggle" layoutX="705.0" layoutY="181.0" mnemonicParsing="false" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View Month" textAlignment="CENTER" wrapText="true">
+      <ToggleButton fx:id="viewMonthToggle" layoutX="618.0" layoutY="244.0" mnemonicParsing="false" onAction="#viewByMonth" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View Month" textAlignment="CENTER" wrapText="true">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
@@ -135,15 +135,16 @@
             <ToggleGroup fx:id="viewSelection" />
          </toggleGroup>
       </ToggleButton>
-      <ToggleButton fx:id="viewWeekToggle" layoutX="705.0" layoutY="244.0" mnemonicParsing="false" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View Week" textAlignment="CENTER" toggleGroup="$viewSelection" wrapText="true">
+      <ToggleButton fx:id="viewWeekToggle" layoutX="705.0" layoutY="244.0" mnemonicParsing="false" onAction="#viewByWeek" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View Week" textAlignment="CENTER" toggleGroup="$viewSelection" wrapText="true">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
       </ToggleButton>
-      <ToggleButton fx:id="viewAllToggle" layoutX="705.0" layoutY="117.0" mnemonicParsing="false" onAction="#viewAllAppts" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View All" textAlignment="CENTER" toggleGroup="$viewSelection" wrapText="true">
+      <ToggleButton fx:id="viewAllToggle" layoutX="529.0" layoutY="244.0" mnemonicParsing="false" onAction="#viewAllAppts" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View All" textAlignment="CENTER" toggleGroup="$viewSelection" wrapText="true">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
       </ToggleButton>
+      <DatePicker fx:id="viewAppointmentsDatePicker" layoutX="618.0" layoutY="214.0" prefHeight="25.0" prefWidth="168.0" stylesheets="@styles/datePickerStyles.css" />
    </children>
 </AnchorPane>
