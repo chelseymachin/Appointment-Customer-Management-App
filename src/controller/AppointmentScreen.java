@@ -13,17 +13,18 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import model.Appointment;
 import model.User;
-
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
@@ -31,25 +32,19 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class AppointmentScreen implements Initializable {
-    public Button editApptButton;
-    public TextField apptIdInput;
-    public TextField apptTitleInput;
-    public TextArea apptDescriptionInput;
-    public TextField apptLocationInput;
-    public TextField apptTypeInput;
-    public ComboBox apptContactComboBox;
-    public ComboBox apptCustomerComboBox;
-    public DatePicker apptDatePicker;
-    public DatePicker viewAppointmentsDatePicker;
-    public ComboBox apptStartTimeComboBox;
-    public ComboBox apptEndTimeComboBox;
-    public Button clearButton;
-    @FXML private Button saveApptButton;
-    @FXML private Button deleteApptButton;
-    @FXML private Button customersButton;
-    @FXML private Button reportsButton;
-    @FXML private Button logoutButton;
-    @FXML private AnchorPane apptsScreenPane;
+    @FXML public Button editApptButton;
+    @FXML public TextField apptIdInput;
+    @FXML public TextField apptTitleInput;
+    @FXML public TextArea apptDescriptionInput;
+    @FXML public TextField apptLocationInput;
+    @FXML public TextField apptTypeInput;
+    @FXML public ComboBox apptContactComboBox;
+    @FXML public ComboBox apptCustomerComboBox;
+    @FXML public DatePicker apptDatePicker;
+    @FXML public DatePicker viewAppointmentsDatePicker;
+    @FXML public ComboBox apptStartTimeComboBox;
+    @FXML public ComboBox apptEndTimeComboBox;
+    @FXML public Button clearButton;
     @FXML private TableView<Appointment> apptsTable;
     @FXML private TableColumn<Appointment, String> apptIdCol;
     @FXML private TableColumn<Appointment, String> titleCol;
@@ -71,6 +66,7 @@ public class AppointmentScreen implements Initializable {
     Appointment selectedAppointment;
     User currentUser;
 
+    /** used to pass the user data about the user currently logged in from the login screen */
     public static void passCurrentUserData(User currentUser) {}
 
     @FXML public void logout(javafx.event.ActionEvent event) throws IOException {
@@ -93,22 +89,18 @@ public class AppointmentScreen implements Initializable {
         selectedAppointment = apptsTable.getSelectionModel().getSelectedItem();
 
         if(selectedAppointment instanceof Appointment) {
-
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setHeaderText("Confirm Deletion");
             alert.setContentText("Are you sure you want to delete appointment #" + selectedAppointment.getAppointmentId() + "?");
             Optional<ButtonType> result = alert.showAndWait();
             if (result.get() == ButtonType.OK) {
                 Query.deleteAppt(selectedAppointment.getAppointmentId());
-
-                System.out.println("Deleted appt! Reload!");
                 Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
                 Scene scene = new Scene(parent);
                 Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
                 stage.setScene(scene);
                 stage.show();
             }
-
         } else {
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please select an appointment in order to delete it!");
@@ -116,6 +108,7 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
+    /** goes to Customers Screen  */
     @FXML public void customersButtonHandler(javafx.event.ActionEvent event) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
         Scene scene = new Scene(parent);
@@ -125,6 +118,7 @@ public class AppointmentScreen implements Initializable {
         stage.show();
     }
 
+    /** goes to Reports Screen  */
     @FXML public void reportsButtonHandler(javafx.event.ActionEvent event) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/view/reportsScreen.fxml"));
         Scene scene = new Scene(parent);
@@ -134,7 +128,8 @@ public class AppointmentScreen implements Initializable {
         stage.show();
     }
 
-    public void viewByWeek() {
+    /** checks to make sure datePickers has a selection, then filters all appts to only show those within the same week of the selected date */
+    @FXML public void viewByWeek() {
         if (viewAppointmentsDatePicker.getValue() == null) {
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please enter a date to view a list of appointments happening during that week!");
@@ -142,15 +137,18 @@ public class AppointmentScreen implements Initializable {
         } else {
             LocalDate selectedDate = viewAppointmentsDatePicker.getValue();
             String selectedYear = selectedDate.toString().substring(0, 4);
+
             WeekFields weeksList = WeekFields.of(Locale.US);
             Integer weekIndex = selectedDate.get(weeksList.weekOfWeekBasedYear());
             String selectedWeek = Integer.toString(weekIndex);
+
             Connection connection;
             try {
                 appointmentsByWeekObservableList.clear();
                 connection = DatabaseConnection.openConnection();
                 ResultSet results = connection.createStatement().executeQuery(String.format("SELECT * FROM customers c INNER JOIN appointments a ON c.Customer_ID = a.Customer_ID WHERE WEEK(DATE(Start))+1 = '%s' AND YEAR(Start) = '%s' ORDER BY Start;", selectedWeek, selectedYear));
                 while (results.next()) {
+                    // converts all appts to user time so it can be displayed in their timezone
                     LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
                     LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
 
@@ -202,6 +200,7 @@ public class AppointmentScreen implements Initializable {
                 connection = DatabaseConnection.openConnection();
                 ResultSet results = connection.createStatement().executeQuery(String.format("SELECT * FROM customers c INNER JOIN appointments a ON c.Customer_ID = a.Customer_ID WHERE MONTH(Start) = '%s' AND YEAR(Start) = '%s' ORDER BY Start", selectedMonth, selectedYear));
                 while (results.next()) {
+                    // converts all appts to user time so it can be displayed in their timezone
                     LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
                     LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
 
@@ -244,6 +243,7 @@ public class AppointmentScreen implements Initializable {
             connection = DatabaseConnection.openConnection();
             ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments, customers, users, contacts WHERE appointments.User_ID = users.User_ID AND appointments.Contact_ID = contacts.Contact_ID AND appointments.Customer_ID = customers.Customer_ID ORDER BY Start;");
             while (results.next()) {
+                // converts all appts to user time so it can be displayed in their timezone
                 LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
                 LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
 
@@ -278,25 +278,32 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
-    public static LocalDateTime stringToLDTConverter(String time, String date) {
+    // helper functions that help me convert timezones within the application
+
+    /** converts a generic string time and date to a LocalDateTime object */
+    @FXML public static LocalDateTime stringToLDTConverter(String time, String date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime ldt = LocalDateTime.parse(date + " " + time + ":00", formatter);
         return ldt;
     }
 
-    public static LocalDateTime usersLDTToUTC(LocalDateTime usersLocalDateTime) {
+    // converts the user system's LocalDateTime to UTC timezone - this is to save the appointment to the database
+    @FXML public static LocalDateTime usersLDTToUTC(LocalDateTime usersLocalDateTime) {
         return usersLocalDateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
     }
 
-    public static LocalDateTime usersLDTToEST(LocalDateTime usersLocalDateTime) {
+    // converts the user system's LocalDateTime to EST timezone - this is to ensure the appointment falls within business hours (which are in EST)
+    @FXML public static LocalDateTime usersLDTToEST(LocalDateTime usersLocalDateTime) {
         return usersLocalDateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("EST", ZoneId.SHORT_IDS)).toLocalDateTime();
     }
 
-    public static LocalDateTime utcToUsersLDT(LocalDateTime utcLocalDateTime) {
-        return utcLocalDateTime.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.of("EST", ZoneId.SHORT_IDS)).toLocalDateTime();
+    // converts a UTC format LocalDateTime instance to the user system's LocalDateTime - this is for displaying all appts correctly in user timezone
+    @FXML public static LocalDateTime utcToUsersLDT(LocalDateTime utcLocalDateTime) {
+        return utcLocalDateTime.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
     }
 
-    public boolean isItWithinBusinessHours(LocalDateTime start, LocalDateTime end) {
+    // checks to see if the start and end LocalDateTime that are input are within the stated business hours (8 - 22 EST)
+    @FXML public boolean isItWithinBusinessHours(LocalDateTime start, LocalDateTime end) {
         LocalDateTime startConvertedToEST = usersLDTToEST(start);
         LocalDateTime endConvertedToEST = usersLDTToEST(end);
 
