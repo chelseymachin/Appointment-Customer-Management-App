@@ -67,7 +67,8 @@ public class AppointmentScreen implements Initializable {
     User currentUser;
 
     /** used to pass the user data about the user currently logged in from the login screen */
-    public static void passCurrentUserData(User currentUser) {}
+    public static void passCurrentUserData(User currentUser) {
+    }
 
     @FXML public void logout(javafx.event.ActionEvent event) throws IOException {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -152,7 +153,7 @@ public class AppointmentScreen implements Initializable {
                     LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
                     LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
 
-                    appointmentsObservableList.add(new Appointment(
+                    appointmentsByWeekObservableList.add(new Appointment(
                             results.getString("Appointment_ID"),
                             results.getString("Customer_ID"),
                             results.getString("Title"),
@@ -165,7 +166,7 @@ public class AppointmentScreen implements Initializable {
                             results.getString("User_ID"),
                             results.getString("Contact_ID")));
                 }
-                apptsTable.setItems(appointmentsObservableList);
+                apptsTable.setItems(appointmentsByWeekObservableList);
 
                 apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
                 customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
@@ -204,7 +205,7 @@ public class AppointmentScreen implements Initializable {
                     LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
                     LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
 
-                    appointmentsObservableList.add(new Appointment(
+                    appointmentsByMonthObservableList.add(new Appointment(
                             results.getString("Appointment_ID"),
                             results.getString("Customer_ID"),
                             results.getString("Title"),
@@ -217,7 +218,7 @@ public class AppointmentScreen implements Initializable {
                             results.getString("User_ID"),
                             results.getString("Contact_ID")));
                 }
-                apptsTable.setItems(appointmentsObservableList);
+                apptsTable.setItems(appointmentsByMonthObservableList);
 
                 apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
                 customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
@@ -237,6 +238,7 @@ public class AppointmentScreen implements Initializable {
     }
 
     public void viewAllAppts() {
+        viewAppointmentsDatePicker.setValue(null);
         Connection connection;
         try {
             appointmentsObservableList.clear();
@@ -281,7 +283,7 @@ public class AppointmentScreen implements Initializable {
     // helper functions that help me convert timezones within the application
 
     /** converts a generic string time and date to a LocalDateTime object */
-    @FXML public static LocalDateTime stringToLDTConverter(String time, String date) {
+    @FXML public LocalDateTime stringToLDTConverter(String time, String date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime ldt = LocalDateTime.parse(date + " " + time + ":00", formatter);
         return ldt;
@@ -472,6 +474,7 @@ public class AppointmentScreen implements Initializable {
         apptStartTimeComboBox.setItems(apptTimesList);
         apptEndTimeComboBox.setItems(apptTimesList);
 
+
         // lambda function to set date picker to ONLY allow selections from future dates and non-weekend days
         apptDatePicker.setDayCellFactory(picker -> new DateCell() {
             public void updateItem(LocalDate selectedDate, boolean empty) {
@@ -481,8 +484,8 @@ public class AppointmentScreen implements Initializable {
             }
         });
 
+        apptsTable.getItems().clear();
         viewAllAppts();
-
     }
 
 

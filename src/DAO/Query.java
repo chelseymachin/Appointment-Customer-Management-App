@@ -2,9 +2,11 @@ package DAO;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import model.Country;
 import model.FirstLevelDivision;
+import model.User;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,6 +14,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 import static DAO.DatabaseConnection.connection;
 
@@ -38,6 +42,28 @@ public class Query {
             System.out.println("Error: " + e.getMessage());
             return false;
         }
+    }
+
+    /** checks current user's ID and uses that to search through appointments for that User ID to see if any of them are starting within 15 minutes of user's local time */
+    @FXML public static void checkForUpcomingAppts() {
+            try {
+                ResultSet apptResults = connection.createStatement().executeQuery(String.format("SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID='%s' AND a.Start BETWEEN '%s' AND '%s'", User.getUserId(), LocalDateTime.now(ZoneId.of("UTC")), LocalDateTime.now(ZoneId.of("UTC")).plusMinutes(15)));
+
+                while (apptResults.next()) {
+                    String  location = apptResults.getString("Location");
+                    String name = apptResults.getString("Customer_Name");
+                    String apptTimeUTCString = apptResults.getString("Start");
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    LocalDateTime usersLocalApptTimeLDT = LocalDateTime.parse(apptTimeUTCString, formatter);
+                    usersLocalApptTimeLDT = usersLocalApptTimeLDT.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+
+                    Alert a = new Alert(Alert.AlertType.INFORMATION);
+                    a.setContentText("You have an appointment with " + name + " starting shortly at " + usersLocalApptTimeLDT.toString().substring(11, 16) + "! Better make your way to " + location + " soon!");
+                    a.showAndWait();
+                }
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            }
     }
 
     public static void updateCustomer(String customerId, String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) {
@@ -266,6 +292,8 @@ public class Query {
         }
         return contactsList;
     }
+
+
 
 
 

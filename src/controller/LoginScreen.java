@@ -1,6 +1,7 @@
 package controller;
 
 import DAO.DatabaseConnection;
+import DAO.Query;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -84,6 +85,7 @@ public class LoginScreen implements Initializable {
                 stage.setScene(scene);
                 stage.setTitle("Appointments");
                 stage.show();
+                Query.checkForUpcomingAppts();
             } else {
                 Alert a = new Alert(Alert.AlertType.ERROR);
                 if (Locale.getDefault().getLanguage().equals("fr")) {

@@ -143,19 +143,25 @@ public class CustomersScreen implements Initializable {
     }
 
     public void deleteButtonHandler(javafx.event.ActionEvent event) throws IOException {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setHeaderText("Confirm deletion");
-        alert.setContentText("Are you sure you want to delete this customer?");
-
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.get() == ButtonType.OK) {
-            Query.deleteCustomer(selectedCustomer.getCustomerId().toString());
-            Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
-            Scene scene = new Scene(parent);
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(scene);
-            stage.setTitle("Customers");
-            stage.show();
+        selectedCustomer = customersTable.getSelectionModel().getSelectedItem();
+        if(selectedCustomer instanceof Customer) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setHeaderText("Confirm deletion");
+            alert.setContentText("Are you sure you want to delete this customer?");
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.get() == ButtonType.OK) {
+                Query.deleteCustomer(selectedCustomer.getCustomerId().toString());
+                Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
+                Scene scene = new Scene(parent);
+                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                stage.setScene(scene);
+                stage.setTitle("Customers");
+                stage.show();
+            }
+        } else {
+            Alert a = new Alert(Alert.AlertType.ERROR);
+            a.setContentText("You must first select a customer to delete from the table!");
+            a.showAndWait();
         }
     }
 
