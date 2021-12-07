@@ -283,7 +283,7 @@ public class AppointmentScreen implements Initializable {
     // helper functions that help me convert timezones within the application
 
     /** converts a generic string time and date to a LocalDateTime object */
-    @FXML public LocalDateTime stringToLDTConverter(String time, String date) {
+    @FXML public static LocalDateTime stringToLDTConverter(String time, String date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime ldt = LocalDateTime.parse(date + " " + time + ":00", formatter);
         return ldt;
@@ -368,6 +368,16 @@ public class AppointmentScreen implements Initializable {
                 a.setContentText("Your appointment is set to begin at " + startEST.toString().substring(11, 16) + " EST and end at " + endEST.toString().substring(11, 16) + " EST, which is outside of our regular business hours (08:00 TO 22:00 EST). Please choose another start or end time!");
                 a.showAndWait();
                 return;
+            } else if (endLocal.isBefore(startLocal)) {
+                Alert a = new Alert(Alert.AlertType.ERROR);
+                a.setContentText("The end time you've selected is before your start time!  Better check that for accuracy, partner!");
+                a.showAndWait();
+                return;
+            }   else if (Query.doesItOverlapOthers(startUTC, endUTC, apptCustomer)) {
+                Alert a = new Alert(Alert.AlertType.ERROR);
+                a.setContentText("Your appointment collides with an appointment that already exists!  Please choose a new date or time and try again!");
+                a.showAndWait();
+                return;
             }
 
             if (!apptIdInput.getText().isEmpty()) {
@@ -448,8 +458,6 @@ public class AppointmentScreen implements Initializable {
         apptDatePicker.setValue(null);
         apptStartTimeComboBox.setValue(null);
         apptEndTimeComboBox.setValue(null);
-
-        apptIdInput.setDisable(false);
 
         this.selectedAppointment = null;
     }

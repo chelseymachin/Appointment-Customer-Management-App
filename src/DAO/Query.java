@@ -1,17 +1,16 @@
 package DAO;
 
+import controller.AppointmentScreen;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import model.Appointment;
 import model.Country;
 import model.FirstLevelDivision;
 import model.User;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -66,7 +65,37 @@ public class Query {
             }
     }
 
-    public static void updateCustomer(String customerId, String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) {
+    /** should receive times to check against UTC times in DB */
+    @FXML public static boolean doesItOverlapOthers(LocalDateTime start, LocalDateTime end, Integer customerId) throws SQLException {
+        LocalTime startTime = start.toLocalTime();
+        LocalTime endTime = end.toLocalTime();
+
+        Boolean itOverlaps = false;
+
+        String sql = "SELECT a.Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments a INNER JOIN customers c ON a.Customer_ID=c.Customer_ID WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
+        PreparedStatement prepared = connection.prepareStatement(sql);
+        prepared.setString(1, startTime.toString());
+        prepared.setString(2, startTime.toString());
+        prepared.setString(3, endTime.toString());
+        prepared.setString(4, endTime.toString());
+        prepared.setString(5, startTime.toString());
+        prepared.setString(6, endTime.toString());
+        prepared.setString(7, startTime.toString());
+        prepared.setString(8, endTime.toString());
+        try {
+            prepared.execute();
+            ResultSet results = prepared.getResultSet();
+            while (results.next()) {
+                    itOverlaps = true;
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return itOverlaps;
+    }
+
+    /** Takes input and updates record of matching customer ID */
+    @FXML public static void updateCustomer(String customerId, String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) {
         try {
             connection.createStatement().executeUpdate(String.format("UPDATE customers"
                             + " SET Customer_Name='%s', Address='%s', Postal_Code='%s', Phone='%s', Last_Update=NOW(), Last_Updated_By='%s', Division_ID='%s'"
@@ -77,14 +106,16 @@ public class Query {
         }
     }
 
-    public static void addCustomer(String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) throws SQLException {
+    /** Takes customer creation parameters and creates next increment customer id and record for customer */
+    @FXML public static void addCustomer(String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) throws SQLException {
         connection.createStatement().executeUpdate(String.format("INSERT INTO customers "
                         + "(Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) " +
                         "VALUES ('%s', '%s', '%s', '%s', NOW(), '%s', NOW(), '%s', '%s')",
                 name, address, zip, phone, userId, userId, firstLevelDivisionId));
     }
 
-    public static void updateAppointment(String appointmentId, String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) {
+    /** Takes input and updates record of matching appointment ID */
+    @FXML public static void updateAppointment(String appointmentId, String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) {
         try {
             connection.createStatement().executeUpdate(String.format("Update appointments"
                 + " SET Title='%s', Description='%s', Location='%s', Type='%s', Start='%s', End='%s', Last_Update=NOW(), Last_Updated_By='%s', Customer_ID='%s', Contact_ID='%s'"
@@ -95,15 +126,17 @@ public class Query {
         }
     }
 
-    public static void addAppointment(String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) throws SQLException {
+    /** Takes appointment creation parameters and creates next increment appointment id and record for id */
+    @FXML public static void addAppointment(String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) throws SQLException {
             connection.createStatement().executeUpdate(String.format("INSERT INTO appointments (Title, Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', NOW(), '%s', NOW(), '%s', '%s', '%s', '%s')", title, description, location, type, apptStart, apptEnd, userId, userId, customerId, userId, contactId));
     }
 
-    public static ObservableList<String> getFirstLevelDivisionsList() {
+    /** Returns a list of first level division names for combo box population */
+    @FXML public static ObservableList<String> getFirstLevelDivisionsList() {
         ObservableList<String> firstLevelDivisionsList = FXCollections.observableArrayList();
 
         try {
-            ResultSet results = connection.createStatement().executeQuery("SELECT Division_ID, Division, Country_ID FROM first_level_divisions;");
+            ResultSet results = connection.createStatement().executeQuery("SELECT Division FROM first_level_divisions;");
             while(results.next()) {
                 firstLevelDivisionsList.add(results.getString("Division"));
             }
@@ -113,8 +146,9 @@ public class Query {
         return firstLevelDivisionsList;
     }
 
-    public static Integer getFirstLevelDivisionId(String firstLevelDivisionName) throws SQLException {
-        String sql = "SELECT * FROM first_level_divisions WHERE Division=?";
+    /** takes the name of a first level division/state/province, and returns the first level division ID from the database as an integer */
+    @FXML public static Integer getFirstLevelDivisionId(String firstLevelDivisionName) throws SQLException {
+        String sql = "SELECT Division_ID, Country_ID, Division FROM first_level_divisions WHERE Division=?";
         PreparedStatement prepared = connection.prepareStatement(sql);
         prepared.setString(1, firstLevelDivisionName);
 
@@ -136,8 +170,9 @@ public class Query {
         return null;
     }
 
-    public static Integer getCountryId(String countryName) throws SQLException {
-        String sql = "SELECT * FROM countries WHERE Country=?";
+    /** takes the name of a country and returns the country ID from the database as an integer */
+    @FXML public static Integer getCountryId(String countryName) throws SQLException {
+        String sql = "SELECT Country_ID, Country FROM countries WHERE Country=?";
         PreparedStatement prepared = connection.prepareStatement(sql);
         prepared.setString(1, countryName);
 
@@ -158,7 +193,8 @@ public class Query {
         return null;
     }
 
-    public static ObservableList<FirstLevelDivision> getFirstLevelDivisionsByCountry(String countryName) throws SQLException {
+
+    @FXML public static ObservableList<FirstLevelDivision> getFirstLevelDivisionsByCountry(String countryName) throws SQLException {
         Country newCountry = new Country(DAO.Query.getCountryId(countryName), countryName);
         ObservableList<FirstLevelDivision> divisions = FXCollections.observableArrayList();
 
@@ -183,8 +219,37 @@ public class Query {
             System.out.println("Error in retrieving first level divisions by country name");
             return null;
         }
+    }
 
+    public static ObservableList<Appointment> getAllAppointments() {
+        ObservableList<Appointment> appointmentsList = FXCollections.observableArrayList();
+        Connection connection;
+        try {
+            connection = DatabaseConnection.openConnection();
+            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments ORDER BY Start;");
+            while (results.next()) {
+                // converts all appts to user time so it can be displayed in their timezone
+                LocalDateTime apptStartConvertedToUserTime = AppointmentScreen.utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
+                LocalDateTime apptEndConvertedToUserTime = AppointmentScreen.utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
 
+                appointmentsList.add(new Appointment(
+                        results.getString("Appointment_ID"),
+                        results.getString("Customer_ID"),
+                        results.getString("Title"),
+                        results.getString("Description"),
+                        results.getString("Location"),
+                        results.getString("Type"),
+                        apptStartConvertedToUserTime.toString(),
+                        apptStartConvertedToUserTime.toString(),
+                        apptEndConvertedToUserTime.toString(),
+                        results.getString("User_ID"),
+                        results.getString("Contact_ID")));
+            }
+            return appointmentsList;
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+        return null;
     }
 
     public static ObservableList<String> getCustomersList() {
