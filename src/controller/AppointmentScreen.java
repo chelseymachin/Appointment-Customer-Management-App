@@ -362,38 +362,39 @@ public class AppointmentScreen implements Initializable {
             endEST = usersLDTToEST(endLocal);
             endUTC = usersLDTToUTC(endLocal);
 
-            // checks to see if the suggested appt start and end are within business hours.  If not, converts start and end to EST to display error.  If so, converts to UTC for database storage
-            if (!isItWithinBusinessHours(startEST, endEST)) {
-                Alert a = new Alert(Alert.AlertType.ERROR);
-                a.setContentText("Your appointment is set to begin at " + startEST.toString().substring(11, 16) + " EST and end at " + endEST.toString().substring(11, 16) + " EST, which is outside of our regular business hours (08:00 TO 22:00 EST). Please choose another start or end time!");
-                a.showAndWait();
-                return;
-            } else if (endLocal.isBefore(startLocal)) {
-                Alert a = new Alert(Alert.AlertType.ERROR);
-                a.setContentText("The end time you've selected is before your start time!  Better check that for accuracy, partner!");
-                a.showAndWait();
-                return;
-            }   else if (Query.doesItOverlapOthers(startUTC, endUTC, apptCustomer)) {
-                Alert a = new Alert(Alert.AlertType.ERROR);
-                a.setContentText("Your appointment collides with an appointment that already exists!  Please choose a new date or time and try again!");
-                a.showAndWait();
-                return;
-            }
 
             if (!apptIdInput.getText().isEmpty()) {
-                apptId = apptIdInput.getText();
-                Query.updateAppointment(
-                        apptId,
-                        apptTitle,
-                        apptType,
-                        apptLocation,
-                        apptDescription,
-                        apptContact,
-                        apptCustomer,
-                        startUTC,
-                        endUTC,
-                        userId
-                );
+
+                if (!isItWithinBusinessHours(startEST, endEST)) {
+                    Alert a = new Alert(Alert.AlertType.ERROR);
+                    a.setContentText("Your appointment is set to begin at " + startEST.toString().substring(11, 16) + " EST and end at " + endEST.toString().substring(11, 16) + " EST, which is outside of our regular business hours (08:00 TO 22:00 EST). Please choose another start or end time!");
+                    a.showAndWait();
+                    return;
+                } else if (endLocal.isBefore(startLocal)) {
+                    Alert a = new Alert(Alert.AlertType.ERROR);
+                    a.setContentText("The end time you've selected is before your start time!  Better check that for accuracy, partner!");
+                    a.showAndWait();
+                    return;
+                }   else if (Query.doesItOverlapAnyExistingApptButItself(startUTC, endUTC, Integer.parseInt(apptCustomerComboBox.getValue().toString()), Integer.parseInt(apptIdInput.getText()))) {
+                    Alert a = new Alert(Alert.AlertType.ERROR);
+                    a.setContentText("Your appointment collides with an appointment that already exists for this customer!  Please choose a new date or time and try again!");
+                    a.showAndWait();
+
+                    return;
+                } else {
+                    Query.updateAppointment(
+                            apptIdInput.getText(),
+                            apptTitle,
+                            apptType,
+                            apptLocation,
+                            apptDescription,
+                            apptContact,
+                            Integer.parseInt(apptCustomerComboBox.getValue().toString()),
+                            startUTC,
+                            endUTC,
+                            userId
+                    );
+                }
                 Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
                 Scene scene = new Scene(parent);
                 Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
@@ -402,17 +403,34 @@ public class AppointmentScreen implements Initializable {
                 stage.show();
             } else {
                 try {
-                    Query.addAppointment(
-                            apptTitle,
-                            apptType,
-                            apptLocation,
-                            apptDescription,
-                            apptContact,
-                            apptCustomer,
-                            startUTC,
-                            endUTC,
-                            userId
-                    );
+                    if (!isItWithinBusinessHours(startEST, endEST)) {
+                        Alert a = new Alert(Alert.AlertType.ERROR);
+                        a.setContentText("Your appointment is set to begin at " + startEST.toString().substring(11, 16) + " EST and end at " + endEST.toString().substring(11, 16) + " EST, which is outside of our regular business hours (08:00 TO 22:00 EST). Please choose another start or end time!");
+                        a.showAndWait();
+                        return;
+                    } else if (endLocal.isBefore(startLocal)) {
+                        Alert a = new Alert(Alert.AlertType.ERROR);
+                        a.setContentText("The end time you've selected is before your start time!  Better check that for accuracy, partner!");
+                        a.showAndWait();
+                        return;
+                    }   else if (Query.doesItOverlapCustomersOtherAppointments(startUTC, endUTC, apptCustomer)) {
+                        Alert a = new Alert(Alert.AlertType.ERROR);
+                        a.setContentText("Your appointment collides with an appointment that already exists for this customer!  Please choose a new date or time and try again!");
+                        a.showAndWait();
+                        return;
+                    } else {
+                        Query.addAppointment(
+                                apptTitle,
+                                apptType,
+                                apptLocation,
+                                apptDescription,
+                                apptContact,
+                                apptCustomer,
+                                startUTC,
+                                endUTC,
+                                userId
+                        );
+                    }
                     Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
                     Scene scene = new Scene(parent);
                     Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
@@ -420,7 +438,7 @@ public class AppointmentScreen implements Initializable {
                     stage.setTitle("Appointments");
                     stage.show();
                 } catch (SQLException ex) {
-                    System.out.println(ex.getMessage());
+                    ex.printStackTrace();
                 }
             }
         }

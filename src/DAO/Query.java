@@ -65,14 +65,53 @@ public class Query {
             }
     }
 
-    /** should receive times to check against UTC times in DB */
-    @FXML public static boolean doesItOverlapOthers(LocalDateTime start, LocalDateTime end, Integer customerId) throws SQLException {
+    @FXML public static boolean doesItOverlapAnyExistingApptButItself(LocalDateTime start, LocalDateTime end, Integer customerId, Integer apptId) throws SQLException {
         LocalTime startTime = start.toLocalTime();
         LocalTime endTime = end.toLocalTime();
 
         Boolean itOverlaps = false;
 
-        String sql = "SELECT a.Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments a INNER JOIN customers c ON a.Customer_ID=c.Customer_ID WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
+        String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
+
+        PreparedStatement prepared = connection.prepareStatement(sql);
+        prepared.setString(1, startTime.toString());
+        prepared.setString(2, startTime.toString());
+        prepared.setString(3, endTime.toString());
+        prepared.setString(4, endTime.toString());
+        prepared.setString(5, startTime.toString());
+        prepared.setString(6, endTime.toString());
+        prepared.setString(7, startTime.toString());
+        prepared.setString(8, endTime.toString());
+
+        try {
+            prepared.execute();
+            ResultSet results = prepared.getResultSet();
+
+            while (results.next()) {
+                if ((results.getInt("Customer_ID") == customerId) && (results.getInt("Appointment_ID") == apptId)) {
+                    itOverlaps = false;
+                } else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") == apptId)) {
+                    itOverlaps = false;
+                } else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") != apptId)) {
+                  itOverlaps = false;
+                } else {
+                    itOverlaps = true;
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return itOverlaps;
+    }
+
+    /** should receive times to check against UTC times in DB to make sure a proposed appointment for a customer doesn't overlap an appointment time on the same date that they already have */
+    @FXML public static boolean doesItOverlapCustomersOtherAppointments(LocalDateTime start, LocalDateTime end, Integer customerId) throws SQLException {
+        LocalTime startTime = start.toLocalTime();
+        LocalTime endTime = end.toLocalTime();
+
+        Boolean itOverlaps = false;
+
+        String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start) FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
         PreparedStatement prepared = connection.prepareStatement(sql);
         prepared.setString(1, startTime.toString());
         prepared.setString(2, startTime.toString());
@@ -86,7 +125,9 @@ public class Query {
             prepared.execute();
             ResultSet results = prepared.getResultSet();
             while (results.next()) {
+                if ((results.getInt("Customer_ID") == customerId) & (results.getString("DATE(Start)") == start.toLocalDate().toString())) {
                     itOverlaps = true;
+                }
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
