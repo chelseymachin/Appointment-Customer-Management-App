@@ -14,6 +14,7 @@ public abstract class DatabaseConnection {
     private static String password = "Passw0rd!"; // Password
     public static Connection connection;  // Connection Interface
 
+    /** This function opens the database connection to the SQL server and returns it */
     public static Connection openConnection()
     {
         try {
@@ -28,6 +29,7 @@ public abstract class DatabaseConnection {
         return connection;
     }
 
+    /** This function closes an already open database connection */
     public static void closeConnection() {
         try {
             connection.close();

@@ -70,6 +70,7 @@ public class AppointmentScreen implements Initializable {
     public static void passCurrentUserData(User currentUser) {
     }
 
+    /** logs out currently logged in user; resets app screen to login screen */
     @FXML public void logout(javafx.event.ActionEvent event) throws IOException {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setHeaderText("Confirm logout");
@@ -86,6 +87,7 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
+    /** when delete appt button is pressed, checks to make sure there is a valid appointment selected (alerts otherwise) and then uses query function to delete the selected appt and refresh the appointment screen/table */
     @FXML public void deleteApptButtonHandler(javafx.event.ActionEvent event) throws IOException{
         selectedAppointment = apptsTable.getSelectionModel().getSelectedItem();
 
@@ -129,7 +131,7 @@ public class AppointmentScreen implements Initializable {
         stage.show();
     }
 
-    /** checks to make sure datePickers has a selection, then filters all appts to only show those within the same week of the selected date */
+    /** checks to make sure datePicker has a selection, then filters all appts to only show those within the same week of the selected date */
     @FXML public void viewByWeek() {
         if (viewAppointmentsDatePicker.getValue() == null) {
             Alert a = new Alert(Alert.AlertType.ERROR);
@@ -179,13 +181,13 @@ public class AppointmentScreen implements Initializable {
                 startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
                 endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
                 userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
-
             } catch(Exception ex) {
                 System.out.println(ex.getMessage());
             }
         }
     }
 
+    /** checks to make sure datePicker has a selection, then filters all appts to only show those within the same month of the selected date */
     public void viewByMonth() {
         if (viewAppointmentsDatePicker.getValue() == null) {
             Alert a = new Alert(Alert.AlertType.ERROR);
@@ -237,6 +239,7 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
+    /** resets datePicker value to no value; gets all appointments screen records and uses them to populate the appointments table */
     public void viewAllAppts() {
         viewAppointmentsDatePicker.setValue(null);
         Connection connection;
@@ -289,22 +292,22 @@ public class AppointmentScreen implements Initializable {
         return ldt;
     }
 
-    // converts the user system's LocalDateTime to UTC timezone - this is to save the appointment to the database
+    /** converts the user system's LocalDateTime to UTC timezone - this is to save the appointment to the  */
     @FXML public static LocalDateTime usersLDTToUTC(LocalDateTime usersLocalDateTime) {
         return usersLocalDateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
     }
 
-    // converts the user system's LocalDateTime to EST timezone - this is to ensure the appointment falls within business hours (which are in EST)
+    /** converts the user system's LocalDateTime to EST timezone - this is to ensure the appointment falls within business hours (which are in EST) */
     @FXML public static LocalDateTime usersLDTToEST(LocalDateTime usersLocalDateTime) {
         return usersLocalDateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("EST", ZoneId.SHORT_IDS)).toLocalDateTime();
     }
 
-    // converts a UTC format LocalDateTime instance to the user system's LocalDateTime - this is for displaying all appts correctly in user timezone
+    /** converts a UTC format LocalDateTime instance to the user system's LocalDateTime - this is for displaying all appts correctly in user timezone */
     @FXML public static LocalDateTime utcToUsersLDT(LocalDateTime utcLocalDateTime) {
         return utcLocalDateTime.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
     }
 
-    // checks to see if the start and end LocalDateTime that are input are within the stated business hours (8 - 22 EST)
+    /** checks to see if the start and end LocalDateTime that are input are within the stated business hours (8 - 22 EST) */
     @FXML public boolean isItWithinBusinessHours(LocalDateTime start, LocalDateTime end) {
         LocalDateTime startConvertedToEST = usersLDTToEST(start);
         LocalDateTime endConvertedToEST = usersLDTToEST(end);
@@ -321,6 +324,7 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
+    /** validates appointment data and saves or rejects it based on validation results */
     public void saveApptButtonHandler(javafx.event.ActionEvent event) throws SQLException, IOException {
         String apptId;
         String apptTitle = null;
@@ -443,7 +447,8 @@ public class AppointmentScreen implements Initializable {
             }
         }
     }
-
+    
+    /** checks to make sure an appointment has been selected then pulls all data from appointment record into appointment form on screen for editing */
     public void editApptButtonHandler(ActionEvent actionEvent) {
         selectedAppointment = apptsTable.getSelectionModel().getSelectedItem();
 
@@ -465,6 +470,7 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
+    /** clears all fields in the form and resets selected appointment to none */
     public void clearButtonHandler(ActionEvent actionEvent) {
         apptIdInput.clear();
         apptTypeInput.clear();
