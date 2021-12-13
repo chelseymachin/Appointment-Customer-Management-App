@@ -66,12 +66,8 @@ public class Query {
             }
     }
 
-<<<<<<< HEAD
-    @FXML public static boolean doesItOverlapAnyExistingApptButItself(LocalDateTime start, LocalDateTime end, Integer customerId, Integer apptId) throws SQLException {
-=======
     /** receives LDT start, end, and customer ID and checks it against the database for any overlaps */
-    @FXML public static boolean doesItOverlapOthers(LocalDateTime start, LocalDateTime end, Integer customerId) throws SQLException {
->>>>>>> e4d1685497980959f4a8339965b0ef3d6e75ac4b
+    @FXML public static boolean doesItOverlapAnyExistingApptButItself(LocalDateTime start, LocalDateTime end, Integer customerId, Integer apptId) throws SQLException {
         LocalTime startTime = start.toLocalTime();
         LocalTime endTime = end.toLocalTime();
 
