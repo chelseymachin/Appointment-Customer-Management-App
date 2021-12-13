@@ -19,10 +19,6 @@ import java.time.format.DateTimeFormatter;
 import static DAO.DatabaseConnection.connection;
 
 public class Query {
-    private static ResultSet selection;
-    private static String input;
-    private static Statement statement;
-    static ObservableList<String> startTimes = FXCollections.observableArrayList();
 
     /** Takes login form input and returns true if it matches an existing login; returns false if not */
     public static boolean loginAttempt(String username, String password) {
@@ -95,7 +91,7 @@ public class Query {
                 } else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") == apptId)) {
                     itOverlaps = false;
                 } else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") != apptId)) {
-                  itOverlaps = false;
+                    itOverlaps = false;
                 } else {
                     itOverlaps = true;
                 }
