@@ -1,5 +1,4 @@
 package DAO;
-
 import controller.AppointmentScreen;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -9,39 +8,41 @@ import model.Appointment;
 import model.Country;
 import model.FirstLevelDivision;
 import model.User;
-
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-
 import static DAO.DatabaseConnection.connection;
 
 public class Query {
-
-    /** Takes login form input and returns true if it matches an existing login; returns false if not */
+    /**
+     * Takes username and password and checks them against the database for a matching record
+     *
+     * @param username
+     * @param password
+     * @return true if matching record exists in database; false if not
+     */
     public static boolean loginAttempt(String username, String password) {
         try{
+            // open connection to DB
             DatabaseConnection.openConnection();
-            PreparedStatement pst = connection.prepareStatement("SELECT User_Name, Password FROM users WHERE User_Name=? AND Password=?");
-            pst.setString(1, username);
-            pst.setString(2, password);
-            ResultSet rs = pst.executeQuery();
-            if (rs.next()) {
-                return true;
-            }
-            else {
-                return false;
-            }
-        } catch (SQLException e) {
-            System.out.println("Error: " + e.getMessage());
+
+            // create result set from query attempt with username and password as input
+            ResultSet results = connection.createStatement().executeQuery(String.format("SELECT User_Name, Password FROM users WHERE User_Name='%s' AND Password='%s'", username, password));
+
+            // if result set is positive, returns true/valid login attempt; else returns false
+            return results.next();
+        } catch (SQLException exception) {
+            System.out.println("Error: " + exception.getMessage());
             return false;
         }
     }
 
-    /** checks current user's ID and uses that to search through appointments for that User ID to see if any of them are starting within 15 minutes of user's local time then produces alert for that user */
-    @FXML public static void checkForUpcomingAppts() {
+    /**
+     * Checks currently logged in user's ID and uses that to search through appointments in the database for any matching appointments starting within 15 minutes of user's local time, then produces alert to notify
+     */
+    public static void checkForUpcomingAppts() {
             try {
                 ResultSet apptResults = connection.createStatement().executeQuery(String.format("SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID='%s' AND a.Start BETWEEN '%s' AND '%s'", User.getUserId(), LocalDateTime.now(ZoneId.of("UTC")), LocalDateTime.now(ZoneId.of("UTC")).plusMinutes(15)));
 
@@ -375,8 +376,13 @@ public class Query {
         }
     }
 
-    /** checks appointments table in database for any appointments that are currently open for a customer; returns true if they exist, false otherwise */
-    public static Boolean checkForCustomerAppointments(String customerId) {
+    /**
+     * Checks appointments table in database for any appointments that are currently entered for a customer
+     *
+     * @param customerId - a string containing the customer's ID #
+     * @return true if customer has open appointments; false if no open appointments in database currently
+     */
+    @FXML public static Boolean checkForCustomerAppointments(String customerId) {
         Boolean hasAppointments = false;
 
         try {
@@ -391,7 +397,7 @@ public class Query {
     }
 
     /** Gets all contacts from contacts table in database and returns their ID as an observable list of strings */
-    public static ObservableList<String> getContacts() {
+    @FXML public static ObservableList<String> getContacts() {
         ObservableList<String> contactsList = FXCollections.observableArrayList();
         try {
             ResultSet results = connection.createStatement().executeQuery("SELECT Contact_ID from contacts;");
