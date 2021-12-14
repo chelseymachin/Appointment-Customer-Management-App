@@ -491,16 +491,60 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
+    /** lambda function provides a functional interface for me to quickly view all appointments on screen initialization */
+    @FXML Runnable viewAllAppts = () -> {
+        viewAppointmentsDatePicker.setValue(null);
+        Connection connection;
+        try {
+            appointmentsObservableList.clear();
+            connection = DatabaseConnection.openConnection();
+            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments, customers, users, contacts WHERE appointments.User_ID = users.User_ID AND appointments.Contact_ID = contacts.Contact_ID AND appointments.Customer_ID = customers.Customer_ID ORDER BY Start;");
+            while (results.next()) {
+                // converts all appts to user time so it can be displayed in their timezone
+                LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
+                LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
+
+                appointmentsObservableList.add(new Appointment(
+                        results.getString("Appointment_ID"),
+                        results.getString("Customer_ID"),
+                        results.getString("Title"),
+                        results.getString("Description"),
+                        results.getString("Location"),
+                        results.getString("Type"),
+                        apptStartConvertedToUserTime.toString(),
+                        apptStartConvertedToUserTime.toString(),
+                        apptEndConvertedToUserTime.toString(),
+                        results.getString("User_ID"),
+                        results.getString("Contact_ID")));
+            }
+            apptsTable.setItems(appointmentsObservableList);
+
+            apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
+            customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+            titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
+            descriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
+            locationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
+            contactCol.setCellValueFactory(new PropertyValueFactory<>("contactId"));
+            typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+            dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
+            startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
+            endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
+            userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
+        } catch (SQLException ex) {
+            System.out.println("Error getting all appointments");
+        }
+    };
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         apptIdInput.setDisable(true);
 
-        // Prevents observable list from copying on page navs; uses query to generate list of customers and then adds to combo box results
+        /** Prevents observable list from copying on page navs; uses query to generate list of customers and then adds to combo box results */
         customersList.clear();
         customersList = Query.getCustomersList();
         apptCustomerComboBox.setItems(customersList);
 
-        // Prevents observable list from copying on page navs; uses query to generate list of contacts and then adds to combo box results
+        /** Prevents observable list from copying on page navs; uses query to generate list of contacts and then adds to combo box results */
         contactsList.clear();
         contactsList = Query.getContacts();
         apptContactComboBox.setItems(contactsList);
@@ -512,7 +556,7 @@ public class AppointmentScreen implements Initializable {
         apptEndTimeComboBox.setItems(apptTimesList);
 
 
-        // lambda function to set date picker to ONLY allow selections from future dates and non-weekend days
+        /** lambda function to set date picker to ONLY allow selections from future dates and non-weekend days */
         apptDatePicker.setDayCellFactory(picker -> new DateCell() {
             public void updateItem(LocalDate selectedDate, boolean empty) {
                 super.updateItem(selectedDate, empty);
@@ -520,14 +564,7 @@ public class AppointmentScreen implements Initializable {
                 setDisable(empty || selectedDate.compareTo(currentDate) < 0);
             }
         });
-
         apptsTable.getItems().clear();
-
-
-
-        viewAllAppts();
+        viewAllAppts.run();
     }
-
-
-
 }
