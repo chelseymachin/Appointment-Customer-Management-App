@@ -16,6 +16,8 @@ import java.time.format.DateTimeFormatter;
 import static DAO.DatabaseConnection.connection;
 
 public class Query {
+    // these are the "initialization" queries, or queries I expect to run at the very start of the program (checking the login attempt and checking to see if whoever is logging in has upcoming appts)
+
     /**
      * Takes username and password and checks them against the database for a matching record
      *
@@ -28,13 +30,20 @@ public class Query {
             // open connection to DB
             DatabaseConnection.openConnection();
 
+            // prep SQL statement; then insert variables from function input
+            String sql = "SELECT User_Name, Password FROM users WHERE User_Name=? AND Password=?";
+            PreparedStatement preparedSQL = connection.prepareStatement(sql);
+            preparedSQL.setString(1, username);
+            preparedSQL.setString(2, password);
+            preparedSQL.execute();
+
             // create result set from query attempt with username and password as input
-            ResultSet results = connection.createStatement().executeQuery(String.format("SELECT User_Name, Password FROM users WHERE User_Name='%s' AND Password='%s'", username, password));
+            ResultSet results = preparedSQL.getResultSet();
 
             // if result set is positive, returns true/valid login attempt; else returns false
             return results.next();
         } catch (SQLException exception) {
-            System.out.println("Error: " + exception.getMessage());
+            System.out.println(exception.getMessage());
             return false;
         }
     }
@@ -44,8 +53,10 @@ public class Query {
      */
     public static void checkForUpcomingAppts() {
             try {
+                // create result set from query attempt with currently logged in user as input
                 ResultSet apptResults = connection.createStatement().executeQuery(String.format("SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID='%s' AND a.Start BETWEEN '%s' AND '%s'", User.getUserId(), LocalDateTime.now(ZoneId.of("UTC")), LocalDateTime.now(ZoneId.of("UTC")).plusMinutes(15)));
 
+                // Loops through appointment results from database and alerts informing user of customer name, local time of appointment, and location
                 while (apptResults.next()) {
                     String  location = apptResults.getString("Location");
                     String name = apptResults.getString("Customer_Name");
@@ -58,56 +69,85 @@ public class Query {
                     a.setContentText("You have an appointment with " + name + " starting shortly at " + usersLocalApptTimeLDT.toString().substring(11, 16) + "! Better make your way to " + location + " soon!");
                     a.showAndWait();
                 }
-            } catch (Exception ex) {
-                System.out.println(ex.getMessage());
+            } catch (SQLException exception) {
+                System.out.println(exception.getMessage());
             }
     }
 
-    /** receives LDT (in UDT is expectation) start, end, and customer ID and checks it against the database for any overlaps */
-    @FXML public static boolean doesItOverlapAnyExistingApptButItself(LocalDateTime start, LocalDateTime end, Integer customerId, Integer apptId) throws SQLException {
+    // helper database query functions to validate appointment times against existing appointment records in database
+
+    /**
+     * Checks start and end of appointment against others in database with same customer id; includes selected appointment id in order to allow itself to be overwritten if some parameters change (customer, date, etc)
+     *
+     * @param start start time of appointment as LocalDateTime object
+     * @param end end time of appointment as LocalDateTime object
+     * @param customerId customer ID as integer
+     * @param apptId appointment ID as integer
+     * @return true if the appointment data input overlaps an already existing appointment (that's not itself); false if it doesn't overlap any other appointments (but itself)
+     */
+    public static boolean doesItOverlapAnyExistingApptButItself(LocalDateTime start, LocalDateTime end, Integer customerId, Integer apptId) {
+        // converts input LDT/date + time to just a LT/time object
         LocalTime startTime = start.toLocalTime();
         LocalTime endTime = end.toLocalTime();
 
-        String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
-
-        PreparedStatement prepared = connection.prepareStatement(sql);
-        prepared.setString(1, startTime.toString());
-        prepared.setString(2, startTime.toString());
-        prepared.setString(3, endTime.toString());
-        prepared.setString(4, endTime.toString());
-        prepared.setString(5, startTime.toString());
-        prepared.setString(6, endTime.toString());
-        prepared.setString(7, startTime.toString());
-        prepared.setString(8, endTime.toString());
-
         try {
-            prepared.execute();
-            ResultSet results = prepared.getResultSet();
+            // prep SQL statement; then insert variables from function input
+            String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
+            PreparedStatement preparedSQL = connection.prepareStatement(sql);
+            preparedSQL.setString(1, startTime.toString());
+            preparedSQL.setString(2, startTime.toString());
+            preparedSQL.setString(3, endTime.toString());
+            preparedSQL.setString(4, endTime.toString());
+            preparedSQL.setString(5, startTime.toString());
+            preparedSQL.setString(6, endTime.toString());
+            preparedSQL.setString(7, startTime.toString());
+            preparedSQL.setString(8, endTime.toString());
+            preparedSQL.execute();
+            ResultSet results = preparedSQL.getResultSet();
 
+            // loops through overlapping appointments to check for a few factors
             while (results.next()) {
+                // customer ID and Appt ID are the same, then the only appointment overlapping this one is itself, so we can safely save over it
                 if ((results.getInt("Customer_ID") == customerId) && (results.getInt("Appointment_ID") == apptId)) {
                     return false;
-                } else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") == apptId)) {
+                }
+                // customer id is not the same but the appt id is; that means that the customer has been changed, meaning it no longer overlaps the previous customer's appointment and can safely be saved
+                else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") == apptId)) {
                     return false;
-                } else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") != apptId)) {
+                }
+                // customer id is not the same and appt id is also not; the appt overlaps, but it's for a different customer/appt combo so we can safely save
+                else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") != apptId)) {
                     return false;
-                } else {
+                }
+                // any other possibility means an overlap and should return false; an indication that we shouldn't save the appointment details selected
+                else {
                     return true;
                 }
             }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
         }
         return false;
     }
 
-    /** should receive times to check against UTC times in DB to make sure a proposed appointment for a customer doesn't overlap an appointment time on the same date that they already have */
-    @FXML public static boolean doesItOverlapCustomersOtherAppointments(LocalDateTime start, LocalDateTime end, Integer customerId) throws SQLException {
+    /**
+     * receives start and end of a suggested appointment and checks to see if that overlaps any other appointments for the same customer
+     *
+     * @param start LocalDateTime object to indicate start date/time of desired appointment
+     * @param end LocalDateTime object to indicate end date/time of desired appointment
+     * @param customerId customer ID as integer
+     * @return true if overlap exists for another appointment with the same customer; false if the appointment start/end don't overlap any other appointment for this customer
+     */
+    public static boolean doesItOverlapCustomersOtherAppointments(LocalDateTime start, LocalDateTime end, Integer customerId) throws SQLException {
+        // converts input LDT/date + time to just a LT/time object
         LocalTime startTime = start.toLocalTime();
         LocalTime endTime = end.toLocalTime();
 
+        // set return variable to false by default
         Boolean itOverlaps = false;
 
+        // prep SQL statement; then insert variables from function input
+        try {
         String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start) FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
         PreparedStatement prepared = connection.prepareStatement(sql);
         prepared.setString(1, startTime.toString());
@@ -118,55 +158,150 @@ public class Query {
         prepared.setString(6, endTime.toString());
         prepared.setString(7, startTime.toString());
         prepared.setString(8, endTime.toString());
-        try {
-            prepared.execute();
-            ResultSet results = prepared.getResultSet();
-            while (results.next()) {
+        prepared.execute();
+        ResultSet results = prepared.getResultSet();
+
+        // loops through all appointments that overlap to see if any of them are for the same customer on the same date; if so, returns true
+        while (results.next()) {
                 if ((results.getInt("Customer_ID") == customerId) & (results.getString("DATE(Start)") == start.toLocalDate().toString())) {
                     itOverlaps = true;
                 }
             }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
         }
         return itOverlaps;
     }
 
-    /** Takes input and updates database record of matching customer ID */
-    @FXML public static void updateCustomer(String customerId, String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) {
+    // customer database query functions
+
+    /**
+     * Takes input and updates database record of matching customer ID
+     *
+     * @param customerId customer ID as string
+     * @param name customer's name as string
+     * @param address customer's street address as string
+     * @param zip customer's postal code as string
+     * @param phone customer's phone # as string
+     * @param firstLevelDivisionId the Integer of the id pertaining to the state/province the customer lives in
+     * @param userId the integer of the id of the currently logged in user
+     */
+    public static void updateCustomer(String customerId, String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) {
         try {
-            connection.createStatement().executeUpdate(String.format("UPDATE customers"
-                            + " SET Customer_Name='%s', Address='%s', Postal_Code='%s', Phone='%s', Last_Update=NOW(), Last_Updated_By='%s', Division_ID='%s'"
-                            + " WHERE Customer_ID='%s'",
-                    name, address, zip, phone, userId, firstLevelDivisionId, Integer.parseInt(customerId)));
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            // prep SQL statement; then insert variables from function input
+            String sql = "UPDATE customers SET Customer_Name=?, Address=?, Postal_Code=?, Phone=?, Last_Update=NOW(), Last_Updated_By=?, Division_ID=? WHERE Customer_ID=?;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, name);
+            prepared.setString(2, address);
+            prepared.setString(3, zip);
+            prepared.setString(4, phone);
+            prepared.setInt(5, userId);
+            prepared.setInt(6, firstLevelDivisionId);
+            prepared.setString(7, customerId);
+            prepared.execute();
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
         }
     }
 
-    /** Takes customer creation parameters and creates next increment customer id and record for customers table in database */
-    @FXML public static void addCustomer(String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) throws SQLException {
-        connection.createStatement().executeUpdate(String.format("INSERT INTO customers "
-                        + "(Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) " +
-                        "VALUES ('%s', '%s', '%s', '%s', NOW(), '%s', NOW(), '%s', '%s')",
-                name, address, zip, phone, userId, userId, firstLevelDivisionId));
-    }
-
-    /** Takes input and updates database record of matching appointment ID */
-    @FXML public static void updateAppointment(String appointmentId, String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) {
+    /**
+     * Takes customer creation parameters and creates next increment customer id and record for customers table in database
+     *
+     * @param name customer's name as string
+     * @param address customer's street address as string
+     * @param zip customer's postal code as string
+     * @param phone customer's phone # as string
+     * @param firstLevelDivisionId the Integer of the id pertaining to the state/province the customer lives in
+     * @param userId the integer of the id of the currently logged in user
+     */
+    public static void addCustomer(String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) throws SQLException {
         try {
-            connection.createStatement().executeUpdate(String.format("Update appointments"
-                + " SET Title='%s', Description='%s', Location='%s', Type='%s', Start='%s', End='%s', Last_Update=NOW(), Last_Updated_By='%s', Customer_ID='%s', Contact_ID='%s'"
-                + " WHERE Appointment_ID='%s'",
-                    title, description, location, type, apptStart, apptEnd, userId, customerId, contactId, appointmentId));
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            // prep SQL statement; then insert variables from function input
+            String sql = "INSERT INTO customers (Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) VALUES (?, ?, ?, ?, NOW(), ?, NOW(), ?, ?);";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, name);
+            prepared.setString(2, address);
+            prepared.setString(3, zip);
+            prepared.setString(4, phone);
+            prepared.setInt(5, userId);
+            prepared.setInt(6, userId);
+            prepared.setInt(7, firstLevelDivisionId);
+            prepared.execute();
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
         }
     }
 
-    /** Takes appointment creation parameters and creates next increment appointment id and record for id on appointments table in database*/
+    // appointment database query functions
+
+    /**
+     * Takes input and updates database record of matching appointment ID
+     *
+     * @param appointmentId appointment ID as string
+     * @param title appointment title as string
+     * @param type appointment type as string
+     * @param location appointment location as string
+     * @param description description of appointment as string
+     * @param contactId contact ID assigned to appointment, as Integer
+     * @param customerId customer ID assigned to appointment, as Integer
+     * @param apptStart LocalDateTime object of the date/time of appointment start
+     * @param apptEnd LocalDateTime object of the date/time of appointment end
+     * @param userId the integer of the id of the currently logged in user
+     */
+    public static void updateAppointment(String appointmentId, String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) {
+        try {
+            // prep SQL statement; then insert variables from function input
+            String sql = "UPDATE appointments SET Title=?, Description=?, Location=?, Type=?, Start=?, End=?, Last_Update=NOW(), Last_Updated_By=?, Customer_ID=?, Contact_ID=? WHERE Appointment_ID=?;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, title);
+            prepared.setString(2, description);
+            prepared.setString(3, location);
+            prepared.setString(4, type);
+            prepared.setTimestamp(5, Timestamp.valueOf(apptStart));
+            prepared.setTimestamp(6, Timestamp.valueOf(apptEnd));
+            prepared.setInt(7, userId);
+            prepared.setInt(8, customerId);
+            prepared.setInt(9, contactId);
+            prepared.setString(10, appointmentId);
+            prepared.execute();
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
+    }
+
+    /**
+     * Takes appointment creation parameters and creates next increment appointment id and record for id on appointments table in database
+     *
+     * @param title appointment title as string
+     * @param type appointment type as string
+     * @param location appointment location as string
+     * @param description description of appointment as string
+     * @param contactId contact ID assigned to appointment, as Integer
+     * @param customerId customer ID assigned to appointment, as Integer
+     * @param apptStart LocalDateTime object of the date/time of appointment start
+     * @param apptEnd LocalDateTime object of the date/time of appointment end
+     * @param userId the integer of the id of the currently logged in user
+     */
     @FXML public static void addAppointment(String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) throws SQLException {
-            connection.createStatement().executeUpdate(String.format("INSERT INTO appointments (Title, Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', NOW(), '%s', NOW(), '%s', '%s', '%s', '%s')", title, description, location, type, apptStart, apptEnd, userId, userId, customerId, userId, contactId));
+        try {
+            // prep SQL statement; then insert variables from function input
+            String sql = "INSERT INTO appointments (Title, Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, NOW(), ?, ?, ?, ?);";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, title);
+            prepared.setString(2, description);
+            prepared.setString(3, location);
+            prepared.setString(4, type);
+            prepared.setTimestamp(5, Timestamp.valueOf(apptStart));
+            prepared.setTimestamp(6, Timestamp.valueOf(apptEnd));
+            prepared.setInt(7, userId);
+            prepared.setInt(8, userId);
+            prepared.setInt(9, customerId);
+            prepared.setInt(10, userId);
+            prepared.setInt(11, contactId);
+            prepared.execute();
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
     }
 
     /** Returns a list of first level division names that exist in first_level_divisions table for combo box population */
