@@ -62,12 +62,10 @@ public class Query {
             }
     }
 
-    /** receives LDT start, end, and customer ID and checks it against the database for any overlaps */
+    /** receives LDT (in UDT is expectation) start, end, and customer ID and checks it against the database for any overlaps */
     @FXML public static boolean doesItOverlapAnyExistingApptButItself(LocalDateTime start, LocalDateTime end, Integer customerId, Integer apptId) throws SQLException {
         LocalTime startTime = start.toLocalTime();
         LocalTime endTime = end.toLocalTime();
-
-        Boolean itOverlaps = false;
 
         String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
 
@@ -87,19 +85,19 @@ public class Query {
 
             while (results.next()) {
                 if ((results.getInt("Customer_ID") == customerId) && (results.getInt("Appointment_ID") == apptId)) {
-                    itOverlaps = false;
+                    return false;
                 } else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") == apptId)) {
-                    itOverlaps = false;
+                    return false;
                 } else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") != apptId)) {
-                    itOverlaps = false;
+                    return false;
                 } else {
-                    itOverlaps = true;
+                    return true;
                 }
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-        return itOverlaps;
+        return false;
     }
 
     /** should receive times to check against UTC times in DB to make sure a proposed appointment for a customer doesn't overlap an appointment time on the same date that they already have */

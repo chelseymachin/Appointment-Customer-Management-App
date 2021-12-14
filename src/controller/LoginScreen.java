@@ -16,11 +16,16 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import model.User;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -39,7 +44,6 @@ public class LoginScreen implements Initializable {
         stage = (Stage) loginScreenPane.getScene().getWindow();
         stage.close();
     }
-
 
 
     @FXML public void loginButtonClick(javafx.event.ActionEvent event) throws IOException {
@@ -76,6 +80,7 @@ public class LoginScreen implements Initializable {
                     System.out.println("Current userId: " + currentUser.getUserId() + " userName: " + currentUser.getUsername());
                     this.currentUser = currentUser;
                     AppointmentScreen.passCurrentUserData(this.currentUser);
+                    addLoginAttempt(username, true);
                 } catch (SQLException ex) {
                     System.out.println("login failed");
                 }
@@ -87,6 +92,7 @@ public class LoginScreen implements Initializable {
                 stage.show();
                 Query.checkForUpcomingAppts();
             } else {
+                addLoginAttempt(username, false);
                 Alert a = new Alert(Alert.AlertType.ERROR);
                 if (Locale.getDefault().getLanguage().equals("fr")) {
                     ResourceBundle rb = ResourceBundle.getBundle("main/Lang", Locale.getDefault());
@@ -107,12 +113,42 @@ public class LoginScreen implements Initializable {
         loginButton.setStyle("-fx-background-color:  #C1CEFE");
     }
 
+    /** creates a file */
+    @FXML public void createLoginActivityFile(){
+        try {
+            File file = new File("logs/login_activity.txt");
+            if (file.createNewFile()) {
+                System.out.println("File created:" + file.getName());
+            } else {
+                System.out.println("File already exists. Location: "+ file.getPath());
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    @FXML public void addLoginAttempt(String username, Boolean loggedInSuccessfully) throws IOException {
+        FileWriter fileWriter = new FileWriter("logs/login_activity.txt", true);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+        bufferedWriter.write(username + " attempted a login at " + Timestamp.valueOf(LocalDateTime.now()));
+        bufferedWriter.newLine();
+
+        if (loggedInSuccessfully) {
+            bufferedWriter.write(username + "'s login attempt was a success!" );
+        } else {
+            bufferedWriter.write(username + "'s login attempt failed!");
+        }
+
+        bufferedWriter.newLine();
+        bufferedWriter.close();
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        System.out.println("Login screen initialized");
-
-
         locationLabel.setText(Locale.getDefault().getDisplayCountry());
+
+        createLoginActivityFile();
 
         if(Locale.getDefault().getLanguage().equals("fr")) {
             ResourceBundle rb = ResourceBundle.getBundle("main/Lang", Locale.getDefault());

@@ -239,49 +239,6 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
-    /** resets datePicker value to no value; gets all appointments screen records and uses them to populate the appointments table */
-    public void viewAllAppts() {
-        viewAppointmentsDatePicker.setValue(null);
-        Connection connection;
-        try {
-            appointmentsObservableList.clear();
-            connection = DatabaseConnection.openConnection();
-            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments, customers, users, contacts WHERE appointments.User_ID = users.User_ID AND appointments.Contact_ID = contacts.Contact_ID AND appointments.Customer_ID = customers.Customer_ID ORDER BY Start;");
-            while (results.next()) {
-                // converts all appts to user time so it can be displayed in their timezone
-                LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
-                LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
-
-                appointmentsObservableList.add(new Appointment(
-                        results.getString("Appointment_ID"),
-                        results.getString("Customer_ID"),
-                        results.getString("Title"),
-                        results.getString("Description"),
-                        results.getString("Location"),
-                        results.getString("Type"),
-                        apptStartConvertedToUserTime.toString(),
-                        apptStartConvertedToUserTime.toString(),
-                        apptEndConvertedToUserTime.toString(),
-                        results.getString("User_ID"),
-                        results.getString("Contact_ID")));
-            }
-            apptsTable.setItems(appointmentsObservableList);
-
-            apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
-            customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
-            titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-            descriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
-            locationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
-            contactCol.setCellValueFactory(new PropertyValueFactory<>("contactId"));
-            typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-            dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
-            startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
-            endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
-            userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
-        } catch (SQLException ex) {
-            System.out.println("Error getting all appointments");
-        }
-    }
 
     // helper functions that help me convert timezones within the application
 
@@ -343,6 +300,9 @@ public class AppointmentScreen implements Initializable {
 
 
         if (apptTypeInput.getText().isEmpty() || apptTitleInput.getText().isEmpty() || apptLocationInput.getText().isEmpty() || apptDescriptionInput.getText().isEmpty() || apptContactComboBox.getSelectionModel().isEmpty() || apptCustomerComboBox.getSelectionModel().isEmpty() || apptDatePicker.getValue() == null || apptStartTimeComboBox.getSelectionModel().isEmpty() || apptEndTimeComboBox.getSelectionModel().isEmpty()) {
+
+
+
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please enter a value/selection for all fields in order to save!");
             a.showAndWait();
@@ -486,6 +446,51 @@ public class AppointmentScreen implements Initializable {
         this.selectedAppointment = null;
     }
 
+
+    /** resets datePicker value to no value; gets all appointments screen records and uses them to populate the appointments table */
+    public void viewAllAppts() {
+        viewAppointmentsDatePicker.setValue(null);
+        Connection connection;
+        try {
+            appointmentsObservableList.clear();
+            connection = DatabaseConnection.openConnection();
+            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments, customers, users, contacts WHERE appointments.User_ID = users.User_ID AND appointments.Contact_ID = contacts.Contact_ID AND appointments.Customer_ID = customers.Customer_ID ORDER BY Start;");
+            while (results.next()) {
+                // converts all appts to user time so it can be displayed in their timezone
+                LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
+                LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
+
+                appointmentsObservableList.add(new Appointment(
+                        results.getString("Appointment_ID"),
+                        results.getString("Customer_ID"),
+                        results.getString("Title"),
+                        results.getString("Description"),
+                        results.getString("Location"),
+                        results.getString("Type"),
+                        apptStartConvertedToUserTime.toString(),
+                        apptStartConvertedToUserTime.toString(),
+                        apptEndConvertedToUserTime.toString(),
+                        results.getString("User_ID"),
+                        results.getString("Contact_ID")));
+            }
+            apptsTable.setItems(appointmentsObservableList);
+
+            apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
+            customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+            titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
+            descriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
+            locationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
+            contactCol.setCellValueFactory(new PropertyValueFactory<>("contactId"));
+            typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+            dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
+            startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
+            endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
+            userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
+        } catch (SQLException ex) {
+            System.out.println("Error getting all appointments");
+        }
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         apptIdInput.setDisable(true);
@@ -517,6 +522,9 @@ public class AppointmentScreen implements Initializable {
         });
 
         apptsTable.getItems().clear();
+
+
+
         viewAllAppts();
     }
 
