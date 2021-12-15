@@ -1,18 +1,20 @@
 package DAO;
+
 import controller.AppointmentScreen;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import model.Appointment;
-import model.Country;
 import model.FirstLevelDivision;
 import model.User;
+
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+
 import static DAO.DatabaseConnection.connection;
 
 public class Query {
@@ -176,6 +178,29 @@ public class Query {
     // customer database query functions
 
     /**
+     * uses checkForCustomerAppointments to validate customer selection; if open appointments exist, returns error; if no open appointments, deletes customer from customers table in database
+     *
+     * @param customerId customer ID as string
+     */
+    public static void deleteCustomer(String customerId) {
+        if (checkForCustomerAppointments(customerId)) {
+            Alert a = new Alert(Alert.AlertType.ERROR);
+            a.setContentText("You cannot delete a customer that has open appointments!  Please delete this customer's appointments first before trying to delete the customer again.");
+            a.showAndWait();
+        } else {
+            try {
+                // prep SQL statement; then insert variables from function input
+                String sql = "DELETE FROM customers WHERE Customer_ID=?;";
+                PreparedStatement prepared = connection.prepareStatement(sql);
+                prepared.setString(1, customerId);
+                prepared.execute();
+            } catch (SQLException exception) {
+                System.out.println(exception.getMessage());
+            }
+        }
+    }
+
+    /**
      * Takes input and updates database record of matching customer ID
      *
      * @param customerId customer ID as string
@@ -235,6 +260,29 @@ public class Query {
     // appointment database query functions
 
     /**
+     *  Deletes appointment from appointments table in database that has same appointment ID as parameter
+     *
+     * @param apptId appointment ID as string
+     */
+    public static void deleteAppt(String apptId, String apptType) {
+        try {
+            // prep SQL statement; then insert variables from function input
+            String sql = "DELETE FROM appointments WHERE Appointment_ID=?;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, apptId);
+            prepared.execute();
+
+            // produces alert that confirms the deletion of the appointment given
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setHeaderText("Deleted!");
+            alert.setContentText("Appt #" + apptId + ", a(n) " + apptType + ", has been deleted from the list.");
+            alert.showAndWait();
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
+    }
+
+    /**
      * Takes input and updates database record of matching appointment ID
      *
      * @param appointmentId appointment ID as string
@@ -282,7 +330,7 @@ public class Query {
      * @param apptEnd LocalDateTime object of the date/time of appointment end
      * @param userId the integer of the id of the currently logged in user
      */
-    @FXML public static void addAppointment(String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) throws SQLException {
+    public static void addAppointment(String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) throws SQLException {
         try {
             // prep SQL statement; then insert variables from function input
             String sql = "INSERT INTO appointments (Title, Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, NOW(), ?, ?, ?, ?);";
@@ -304,82 +352,72 @@ public class Query {
         }
     }
 
-    /** Returns a list of first level division names that exist in first_level_divisions table for combo box population */
-    @FXML public static ObservableList<String> getFirstLevelDivisionsList() {
+    // helper query functions that return lists for combo box population and organization/filtering of first level divisions and countries
+
+    /**
+     * helper function for easy combo box population
+     * @return a list of first level division names that exist in the first_level_divisions table of the database
+     */
+    public static ObservableList<String> getFirstLevelDivisionsList() {
+        // empty string list to store the results
         ObservableList<String> firstLevelDivisionsList = FXCollections.observableArrayList();
 
         try {
+            // queries the database to return the name of the division for each record in database list
             ResultSet results = connection.createStatement().executeQuery("SELECT Division FROM first_level_divisions;");
+
+            // loops through resultset and adds a new string to the list for each division name (with the division name)
             while(results.next()) {
                 firstLevelDivisionsList.add(results.getString("Division"));
             }
         } catch (SQLException exception) {
-            exception.printStackTrace();
+            System.out.println(exception.getMessage());
         }
         return firstLevelDivisionsList;
     }
 
-    /** takes the name of a first level division/state/province and returns the first level division ID from the first_level_divisions table in the database as an integer */
-    @FXML public static Integer getFirstLevelDivisionId(String firstLevelDivisionName) throws SQLException {
-        String sql = "SELECT Division_ID, Country_ID, Division FROM first_level_divisions WHERE Division=?";
-        PreparedStatement prepared = connection.prepareStatement(sql);
-        prepared.setString(1, firstLevelDivisionName);
+    /**
+     * helper function for easy combo box population
+     * @return a list of country names that exist in the countries table of the database
+     */
+    public static ObservableList<String> getCountriesList() {
+        // empty string list to store the results
+        ObservableList<String> countriesList = FXCollections.observableArrayList();
 
         try {
-            prepared.execute();
-            ResultSet results = prepared.getResultSet();
+            // queries the database to return the name of the country for each record in database list
+            ResultSet results = connection.createStatement().executeQuery("SELECT Country from countries;");
 
-            while (results.next()) {
-                FirstLevelDivision newFLD = new FirstLevelDivision(
-                        results.getInt("Division_ID"),
-                        results.getInt("Country_ID"),
-                        results.getString("Division")
-                );
-                return newFLD.firstLevelDivisionId;
+            // loops through resultset and adds a new string to the list for each country name (with the country name)
+            while(results.next()) {
+                countriesList.add(results.getString("Country"));
             }
-        } catch (Exception ex) {
-            System.out.println("Error in getting FLD");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
         }
-        return null;
+        return countriesList;
     }
 
-    /** takes the name of a country and returns the country ID from the countries table in database as an integer */
-    @FXML public static Integer getCountryId(String countryName) throws SQLException {
-        String sql = "SELECT Country_ID, Country FROM countries WHERE Country=?";
-        PreparedStatement prepared = connection.prepareStatement(sql);
-        prepared.setString(1, countryName);
-
-        try {
-            prepared.execute();
-            ResultSet results = prepared.getResultSet();
-
-            while (results.next()) {
-                Country newCountry = new Country(
-                        results.getInt("Country_ID"),
-                        results.getString("Country")
-                );
-                return newCountry.countryId;
-            }
-        } catch (Exception ex) {
-            System.out.println("Error in getting country ID");
-        }
-        return null;
-    }
-
-
-    /** Takes a country name and selects the corresponding first level divisions list that it's tied to from the database */
-    @FXML public static ObservableList<FirstLevelDivision> getFirstLevelDivisionsByCountry(String countryName) throws SQLException {
-        Country newCountry = new Country(DAO.Query.getCountryId(countryName), countryName);
+    /**
+     * filters/produces the first level divisions list for a given country name
+     * @param countryName name of country you're looking to produce a corresponding first level divisions list for
+     * @return a list of first level division objects that match the country ID of the name given in the database
+     */
+    public static ObservableList<FirstLevelDivision> getFirstLevelDivisionsByCountry(String countryName) throws SQLException {
+        // empty list to store results
         ObservableList<FirstLevelDivision> divisions = FXCollections.observableArrayList();
 
-        String sql = "SELECT * FROM first_level_divisions WHERE COUNTRY_ID=?;";
-        PreparedStatement prepared = connection.prepareStatement(sql);
-        prepared.setInt(1, newCountry.getCountryId());
-
         try {
+            // prep SQL statement; then insert variables from function input
+            String sql = "SELECT Division_ID, first_level_divisions.Country_ID, Division FROM first_level_divisions INNER JOIN countries ON first_level_divisions.Country_ID = countries.Country_ID WHERE countries.Country=?;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, countryName);
             prepared.execute();
+
+            // store results of statement in ResultSet
             ResultSet results = prepared.getResultSet();
 
+            // loop through results and add a new FirstLevelDivision object for each result in the database
             while (results.next()) {
                 FirstLevelDivision newFLD = new FirstLevelDivision(
                         results.getInt("Division_ID"),
@@ -389,11 +427,76 @@ public class Query {
                 divisions.add(newFLD);
             }
             return divisions;
-        } catch (Exception ex) {
-            System.out.println("Error in retrieving first level divisions by country name");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
             return null;
         }
     }
+
+    /**
+     * takes the name of a first level division/state/province and returns the first level division ID from the first_level_divisions table in the database as an integer
+     * @param firstLevelDivisionName name of first Level division that you want to get the ID for
+     * @return the integer ID of the first level division name given
+     */
+    public static Integer getFirstLevelDivisionId(String firstLevelDivisionName) throws SQLException {
+        try {
+            // prep SQL statement; then insert variables from function input
+            String sql = "SELECT Division_ID, Division FROM first_level_divisions WHERE Division=?";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, firstLevelDivisionName);
+            prepared.execute();
+
+            // save results to ResultSet object and return ID
+            ResultSet results = prepared.getResultSet();
+            return results.getInt("Division_ID");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Gets all customers' IDs from the customers table in database and returns them as an observable list of Strings
+     * @return an observable list of customer IDs to populate a combobox easily with
+     */
+    public static ObservableList<String> getCustomersList() {
+        // creates empty observable list to store results in
+        ObservableList<String> customersList = FXCollections.observableArrayList();
+
+
+        try {
+            ResultSet results = connection.createStatement().executeQuery("SELECT Customer_ID, Customer_Name from customers;");
+            // loops through results and adds a new ID to list of customer IDs for each result
+            while(results.next()) {
+                customersList.add(results.getString("Customer_ID"));
+            }
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
+        return customersList;
+    }
+
+    /**
+     * Gets all contacts' IDs from the contacts table in database and returns them as an observable list of Strings
+     * @return an observable list of contact IDs to populate a combobox easily with
+     */
+    public static ObservableList<String> getContacts() {
+        // creates empty observable list to store results in
+        ObservableList<String> contactsList = FXCollections.observableArrayList();
+
+        try {
+            ResultSet results = connection.createStatement().executeQuery("SELECT Contact_ID from contacts;");
+            // loops through results and adds a new ID to list of contact IDs for each result
+            while(results.next()) {
+                contactsList.add(results.getString("Contact_ID"));
+            }
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
+        return contactsList;
+    }
+
+
 
     /** Gets all appointments from the database appointments table and converts them to the user's local timezone before returning them as an observable list of Appointments */
     public static ObservableList<Appointment> getAllAppointments() {
@@ -428,35 +531,9 @@ public class Query {
     }
     
     
-    /** Gets all customers from the customers table in database and returns them as an observable list of Strings */
-    public static ObservableList<String> getCustomersList() {
-        ObservableList<String> customersList = FXCollections.observableArrayList();
 
-        try {
-            ResultSet results = connection.createStatement().executeQuery("SELECT Customer_ID, Customer_Name from customers;");
-            while(results.next()) {
-                customersList.add(results.getString("Customer_ID"));
-            }
-        } catch (Exception exception) {
-            System.out.println("Error in getting all customers list");
-        }
-        return customersList;
-    }
 
-    /** Gets all countries from the countries table in database and returns them as an observable list of Strings */
-    public static ObservableList<String> getCountriesList() {
-        ObservableList<String> countriesList = FXCollections.observableArrayList();
 
-        try {
-            ResultSet results = connection.createStatement().executeQuery("SELECT Country_ID, Country from countries;");
-            while(results.next()) {
-                countriesList.add(results.getString("Country"));
-            }
-        } catch (SQLException ex) {
-            System.out.println("Error with getting all countries");
-        }
-        return countriesList;
-    }
 
     /** Generates a list of all appointment times available and returns it as an obserable list of Strings */
     public static ObservableList<String> getApptTimes() {
@@ -486,31 +563,6 @@ public class Query {
             return apptTimes;
     }
 
-
-    /** Deletes appointment from appointments table in database that has same appt ID as parameter */
-    public static void deleteAppt(String apptId) {
-        try {
-            connection.createStatement().executeUpdate(String.format("DELETE FROM appointments WHERE Appointment_ID='%s'", apptId));
-        } catch (Exception e) {
-            System.out.println("Error deleting appointment: " + e.getMessage());
-        }
-    }
-
-    /** uses checkForCustomerAppointments to validate customer selection; if open appointments exist, returns error; if no open appointments, deletes customer from customers table in database */
-    public static void deleteCustomer(String customerId) {
-        if (checkForCustomerAppointments(customerId)) {
-            Alert a = new Alert(Alert.AlertType.ERROR);
-            a.setContentText("You cannot delete a customer that has open appointments!  Please delete this customer's appointments first before trying to delete the customer again.");
-            a.showAndWait();
-        } else {
-            try {
-                connection.createStatement().executeUpdate(String.format("DELETE FROM customers WHERE Customer_ID='%s'", customerId));
-            } catch (Exception ex) {
-                System.out.println(ex.getMessage());
-            }
-        }
-    }
-
     /**
      * Checks appointments table in database for any appointments that are currently entered for a customer
      *
@@ -521,7 +573,7 @@ public class Query {
         Boolean hasAppointments = false;
 
         try {
-            ResultSet results = connection.createStatement().executeQuery(String.format("SELECT * FROM appointments WHERE Customer_ID='%s'", customerId));
+            ResultSet results = connection.createStatement().executeQuery(String.format("SELECT Appointment_ID FROM appointments WHERE Customer_ID='%s'", customerId));
             while(results.next()) {
                 hasAppointments = true;
             }
@@ -531,17 +583,5 @@ public class Query {
         return hasAppointments;
     }
 
-    /** Gets all contacts from contacts table in database and returns their ID as an observable list of strings */
-    @FXML public static ObservableList<String> getContacts() {
-        ObservableList<String> contactsList = FXCollections.observableArrayList();
-        try {
-            ResultSet results = connection.createStatement().executeQuery("SELECT Contact_ID from contacts;");
-            while(results.next()) {
-                contactsList.add(results.getString("Contact_ID"));
-            }
-        } catch (Exception exception) {
-            System.out.println("Error in getting all contacts list");
-        }
-        return contactsList;
-    }
+
 }

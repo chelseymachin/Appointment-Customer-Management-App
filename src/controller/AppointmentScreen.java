@@ -97,7 +97,7 @@ public class AppointmentScreen implements Initializable {
             alert.setContentText("Are you sure you want to delete appointment #" + selectedAppointment.getAppointmentId() + "?");
             Optional<ButtonType> result = alert.showAndWait();
             if (result.get() == ButtonType.OK) {
-                Query.deleteAppt(selectedAppointment.getAppointmentId());
+                Query.deleteAppt(selectedAppointment.getAppointmentId(), selectedAppointment.getType());
                 Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
                 Scene scene = new Scene(parent);
                 Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
