@@ -214,21 +214,31 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
-    /** checks to make sure datePicker has a selection, then filters all appts to only show those within the same month of the selected date */
+    /**
+     * checks to make sure datePicker has a selection, then filters all appts to only show those within the same month of the selected date
+     */
     public void viewByMonth() {
         if (viewAppointmentsDatePicker.getValue() == null) {
+            // if there's no date picked in the datepicker, an alert is presented to user
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please enter a date to view a list of appointments happening during that month!");
             a.showAndWait();
         } else {
+            // gets date and year from datepicker element
             LocalDate selectedDate = viewAppointmentsDatePicker.getValue();
-            String selectedMonth = selectedDate.toString().substring(5,7);
-            String selectedYear = selectedDate.toString().substring(0,4);
-            Connection connection;
+
             try {
+                // clears the current observable list set for appointments by week view (just in case a previous has been selected)
                 appointmentsByMonthObservableList.clear();
-                connection = DatabaseConnection.openConnection();
-                ResultSet results = connection.createStatement().executeQuery(String.format("SELECT * FROM customers c INNER JOIN appointments a ON c.Customer_ID = a.Customer_ID WHERE MONTH(Start) = '%s' AND YEAR(Start) = '%s' ORDER BY Start", selectedMonth, selectedYear));
+
+                // prep SQL statement and insert string input from week selection
+                String sql = "SELECT * FROM appointments WHERE MONTHNAME(Start)=MONTHNAME(?);";
+                PreparedStatement prepared = connection.prepareStatement(sql);
+                prepared.setString(1, String.valueOf(selectedDate));
+                prepared.execute();
+                ResultSet results = prepared.getResultSet();
+
+                // loops through results and adds an appointment object to the view's observable list for each record that matches the input week selected
                 while (results.next()) {
                     // converts all appts to user time so it can be displayed in their timezone
                     LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
@@ -260,8 +270,8 @@ public class AppointmentScreen implements Initializable {
                 startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
                 endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
                 userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
-            } catch (Exception ex) {
-                System.out.println(ex.getMessage());
+            } catch (SQLException exception) {
+                System.out.println(exception.getMessage());
             }
         }
     }
