@@ -66,12 +66,18 @@ public class AppointmentScreen implements Initializable {
     Appointment selectedAppointment;
     User currentUser;
 
-    /** used to pass the user data about the user currently logged in from the login screen */
+    /**
+     * used to pass the user data about the user currently logged in from the login screen
+     * @param currentUser accepts a User object of (preferably) the currently logged in user from the login screen
+     */
     public static void passCurrentUserData(User currentUser) {
     }
 
-    /** logs out currently logged in user; resets app screen to login screen */
-    @FXML public void logout(javafx.event.ActionEvent event) throws IOException {
+    /**
+     * logs out currently logged in user if they approve confirmation pop-up; resets app screen to login screen
+     * @param event accepts event input from JavaFX to get current scene and window
+     */
+    public void logout(javafx.event.ActionEvent event) throws IOException {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setHeaderText("Confirm logout");
         alert.setContentText("Are you sure you want to logout?");
