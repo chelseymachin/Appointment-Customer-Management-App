@@ -3,7 +3,6 @@ package DAO;
 import controller.AppointmentScreen;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import model.Appointment;
 import model.FirstLevelDivision;
@@ -173,6 +172,32 @@ public class Query {
             System.out.println(exception.getMessage());
         }
         return itOverlaps;
+    }
+
+    /**
+     * Checks appointments table in database for any appointments that are currently entered for a customer
+     *
+     * @param customerId - a string containing the customer's ID #
+     * @return true if customer has open appointments; false if no open appointments in database currently
+     */
+    public static Boolean checkForCustomerAppointments(String customerId) {
+        // variable set to false by default
+        Boolean hasAppointments = false;
+
+        try {
+            // prep SQL statement; then insert variables from function input
+            String sql = "SELECT Appointment_ID FROM appointments WHERE Customer_ID=?;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, customerId);
+            prepared.execute();
+            ResultSet results = prepared.getResultSet();
+            while(results.next()) {
+                hasAppointments = true;
+            }
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
+        return hasAppointments;
     }
 
     // customer database query functions
@@ -352,7 +377,7 @@ public class Query {
         }
     }
 
-    // helper query functions that return lists for combo box population and organization/filtering of first level divisions and countries
+    // helper query functions that return lists for combo box or table population and organization/filtering of first level divisions and countries
 
     /**
      * helper function for easy combo box population
@@ -496,49 +521,15 @@ public class Query {
         return contactsList;
     }
 
-
-
-    /** Gets all appointments from the database appointments table and converts them to the user's local timezone before returning them as an observable list of Appointments */
-    public static ObservableList<Appointment> getAllAppointments() {
-        ObservableList<Appointment> appointmentsList = FXCollections.observableArrayList();
-        Connection connection;
-        try {
-            connection = DatabaseConnection.openConnection();
-            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments ORDER BY Start;");
-            while (results.next()) {
-                // converts all appts to user time so it can be displayed in their timezone
-                LocalDateTime apptStartConvertedToUserTime = AppointmentScreen.utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
-                LocalDateTime apptEndConvertedToUserTime = AppointmentScreen.utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
-
-                appointmentsList.add(new Appointment(
-                        results.getString("Appointment_ID"),
-                        results.getString("Customer_ID"),
-                        results.getString("Title"),
-                        results.getString("Description"),
-                        results.getString("Location"),
-                        results.getString("Type"),
-                        apptStartConvertedToUserTime.toString(),
-                        apptStartConvertedToUserTime.toString(),
-                        apptEndConvertedToUserTime.toString(),
-                        results.getString("User_ID"),
-                        results.getString("Contact_ID")));
-            }
-            return appointmentsList;
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-        }
-        return null;
-    }
-    
-    
-
-
-
-
-    /** Generates a list of all appointment times available and returns it as an obserable list of Strings */
+    /**
+     * Generates a list of all appointment times available and returns it as an obserable list of Strings
+     * @return an observable list of appointment times as strings to populate a combobox easily with
+     */
     public static ObservableList<String> getApptTimes() {
+        // an empty list to store the results in
         ObservableList<String> apptTimes = FXCollections.observableArrayList();
 
+        // loops through 24 hour time period to create appointment times
         for (int i = 1; i < 24; i++ ) {
             if (i < 10) {
                 String newAppt1 = LocalTime.parse("0" + i + ":00").toString();
@@ -560,28 +551,43 @@ public class Query {
                 apptTimes.add(newAppt4);
             }
         }
-            return apptTimes;
+        return apptTimes;
     }
 
     /**
-     * Checks appointments table in database for any appointments that are currently entered for a customer
-     *
-     * @param customerId - a string containing the customer's ID #
-     * @return true if customer has open appointments; false if no open appointments in database currently
+     * Gets all appointments from the database appointments table and converts them to the user's local timezone before returning them as an observable list of Appointments
+     * @return an observable list of appointments from the database that are converted to the user's local timezone
      */
-    @FXML public static Boolean checkForCustomerAppointments(String customerId) {
-        Boolean hasAppointments = false;
-
+    public static ObservableList<Appointment> getAllAppointments() {
+        // an empty list to store the results in
+        ObservableList<Appointment> appointmentsList = FXCollections.observableArrayList();
         try {
-            ResultSet results = connection.createStatement().executeQuery(String.format("SELECT Appointment_ID FROM appointments WHERE Customer_ID='%s'", customerId));
-            while(results.next()) {
-                hasAppointments = true;
+            // saves results from query into ResultSet object
+            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments ORDER BY Start;");
+
+            // loops through all results to create a new appointment object for each item in records
+            while (results.next()) {
+                // converts all appts to user time so it can be displayed in their timezone
+                LocalDateTime apptStartConvertedToUserTime = AppointmentScreen.utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
+                LocalDateTime apptEndConvertedToUserTime = AppointmentScreen.utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
+
+                appointmentsList.add(new Appointment(
+                        results.getString("Appointment_ID"),
+                        results.getString("Customer_ID"),
+                        results.getString("Title"),
+                        results.getString("Description"),
+                        results.getString("Location"),
+                        results.getString("Type"),
+                        apptStartConvertedToUserTime.toString(),
+                        apptStartConvertedToUserTime.toString(),
+                        apptEndConvertedToUserTime.toString(),
+                        results.getString("User_ID"),
+                        results.getString("Contact_ID")));
             }
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            return appointmentsList;
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
         }
-        return hasAppointments;
+        return null;
     }
-
-
 }
