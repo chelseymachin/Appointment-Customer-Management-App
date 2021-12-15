@@ -14,17 +14,18 @@ public abstract class DatabaseConnection {
     private static String password = "Passw0rd!"; // Password
     public static Connection connection;  // Connection Interface
 
-    /** This function opens the database connection to the SQL server and returns it */
-    public static Connection openConnection()
-    {
+    /**
+     * This function opens the database connection to the SQL server and returns it
+     * @return JDBC Connection object that is open
+     */
+    public static Connection openConnection() {
         try {
             Class.forName(driver); // Locate Driver
             connection = DriverManager.getConnection(jdbcUrl, userName, password); // Reference Connection object
-            System.out.println("Connection successful!");
         }
-        catch(Exception e)
+        catch(Exception exception)
         {
-            System.out.println("Error:" + e.getMessage());
+            System.out.println(exception.getMessage());
         }
         return connection;
     }
@@ -33,11 +34,10 @@ public abstract class DatabaseConnection {
     public static void closeConnection() {
         try {
             connection.close();
-            System.out.println("Connection closed!");
         }
-        catch(Exception e)
+        catch(Exception exception)
         {
-            System.out.println("Error:" + e.getMessage());
+            System.out.println(exception.getMessage());
         }
     }
 }
