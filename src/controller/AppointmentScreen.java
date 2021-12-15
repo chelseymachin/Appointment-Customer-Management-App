@@ -16,9 +16,11 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import model.Appointment;
 import model.User;
+
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -26,10 +28,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.WeekFields;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.ResourceBundle;
+
+import static DAO.DatabaseConnection.connection;
 
 public class AppointmentScreen implements Initializable {
     @FXML public Button editApptButton;
@@ -73,6 +75,9 @@ public class AppointmentScreen implements Initializable {
     public static void passCurrentUserData(User currentUser) {
     }
 
+
+    // button handlers for appointment screen buttons
+
     /**
      * logs out currently logged in user if they approve confirmation pop-up; resets app screen to login screen
      * @param event accepts event input from JavaFX to get current scene and window
@@ -93,8 +98,11 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
-    /** when delete appt button is pressed, checks to make sure there is a valid appointment selected (alerts otherwise) and then uses query function to delete the selected appt and refresh the appointment screen/table */
-    @FXML public void deleteApptButtonHandler(javafx.event.ActionEvent event) throws IOException{
+    /**
+     * when delete appt button is pressed, checks to make sure there is a valid appointment selected (alerts otherwise) and then uses query function to delete the selected appt and refresh the appointment screen/table
+     * @param event accepts event input from JavaFX to get current scene and window
+     */
+    public void deleteApptButtonHandler(javafx.event.ActionEvent event) throws IOException {
         selectedAppointment = apptsTable.getSelectionModel().getSelectedItem();
 
         if(selectedAppointment instanceof Appointment) {
@@ -117,8 +125,11 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
-    /** goes to Customers Screen  */
-    @FXML public void customersButtonHandler(javafx.event.ActionEvent event) throws IOException {
+    /**
+     * goes to Customers Screen
+     * @param event accepts event input from JavaFX to get current scene and window
+     */
+    public void customersButtonHandler(javafx.event.ActionEvent event) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
         Scene scene = new Scene(parent);
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
@@ -127,8 +138,11 @@ public class AppointmentScreen implements Initializable {
         stage.show();
     }
 
-    /** goes to Reports Screen  */
-    @FXML public void reportsButtonHandler(javafx.event.ActionEvent event) throws IOException {
+    /**
+     * goes to Reports Screen
+     * @param event accepts event input from JavaFX to get current scene and window
+     */
+    public void reportsButtonHandler(javafx.event.ActionEvent event) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/view/reportsScreen.fxml"));
         Scene scene = new Scene(parent);
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
@@ -137,25 +151,32 @@ public class AppointmentScreen implements Initializable {
         stage.show();
     }
 
-    /** checks to make sure datePicker has a selection, then filters all appts to only show those within the same week of the selected date */
-    @FXML public void viewByWeek() {
+    // handlers for view change buttons on appointment screen
+    /**
+     * checks to make sure datePicker has a selection, then filters all appts to only show those within the same week of the selected date
+     */
+    public void viewByWeek() {
         if (viewAppointmentsDatePicker.getValue() == null) {
+            // if there's no date picked in the datepicker, an alert is presented to user
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please enter a date to view a list of appointments happening during that week!");
             a.showAndWait();
         } else {
+            // gets date and year from datepicker element
             LocalDate selectedDate = viewAppointmentsDatePicker.getValue();
-            String selectedYear = selectedDate.toString().substring(0, 4);
 
-            WeekFields weeksList = WeekFields.of(Locale.US);
-            Integer weekIndex = selectedDate.get(weeksList.weekOfWeekBasedYear());
-            String selectedWeek = Integer.toString(weekIndex);
-
-            Connection connection;
             try {
+                // clears the current observable list set for appointments by week view (just in case a previous has been selected)
                 appointmentsByWeekObservableList.clear();
-                connection = DatabaseConnection.openConnection();
-                ResultSet results = connection.createStatement().executeQuery(String.format("SELECT * FROM customers c INNER JOIN appointments a ON c.Customer_ID = a.Customer_ID WHERE WEEK(DATE(Start))+1 = '%s' AND YEAR(Start) = '%s' ORDER BY Start;", selectedWeek, selectedYear));
+
+                // prep SQL statement and insert string input from week selection
+                String sql = "SELECT * FROM appointments WHERE YEARWEEK(Start)=YEARWEEK(?);";
+                PreparedStatement prepared = connection.prepareStatement(sql);
+                prepared.setString(1, String.valueOf(selectedDate));
+                prepared.execute();
+                ResultSet results = prepared.getResultSet();
+
+                // loops through results and adds an appointment object to the view's observable list for each record that matches the input week selected
                 while (results.next()) {
                     // converts all appts to user time so it can be displayed in their timezone
                     LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
@@ -187,8 +208,8 @@ public class AppointmentScreen implements Initializable {
                 startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
                 endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
                 userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
-            } catch(Exception ex) {
-                System.out.println(ex.getMessage());
+            } catch(SQLException exception) {
+                System.out.println(exception.getMessage());
             }
         }
     }
