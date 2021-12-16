@@ -22,8 +22,8 @@ public class Query {
     /**
      * Takes username and password and checks them against the database for a matching record
      *
-     * @param username
-     * @param password
+     * @param username username for attempted login
+     * @param password password for attempted login
      * @return true if matching record exists in database; false if not
      */
     public static boolean loginAttempt(String username, String password) {
@@ -138,6 +138,7 @@ public class Query {
      * @param end LocalDateTime object to indicate end date/time of desired appointment
      * @param customerId customer ID as integer
      * @return true if overlap exists for another appointment with the same customer; false if the appointment start/end don't overlap any other appointment for this customer
+     * @throws SQLException throws error if unable to get results from database
      */
     public static boolean doesItOverlapCustomersOtherAppointments(LocalDateTime start, LocalDateTime end, Integer customerId) throws SQLException {
         // converts input LDT/date + time to just a LT/time object
@@ -263,6 +264,7 @@ public class Query {
      * @param phone customer's phone # as string
      * @param firstLevelDivisionId the Integer of the id pertaining to the state/province the customer lives in
      * @param userId the integer of the id of the currently logged in user
+     * @throws SQLException throws error if unable to add record to database
      */
     public static void addCustomer(String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) throws SQLException {
         try {
@@ -288,6 +290,7 @@ public class Query {
      *  Deletes appointment from appointments table in database that has same appointment ID as parameter
      *
      * @param apptId appointment ID as string
+     * @param apptType appointment type as a string; for more info in functionality
      */
     public static void deleteAppt(String apptId, String apptType) {
         try {
@@ -354,6 +357,7 @@ public class Query {
      * @param apptStart LocalDateTime object of the date/time of appointment start
      * @param apptEnd LocalDateTime object of the date/time of appointment end
      * @param userId the integer of the id of the currently logged in user
+     * @throws SQLException throws error if unable to add record to the database
      */
     public static void addAppointment(String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) throws SQLException {
         try {
@@ -427,6 +431,7 @@ public class Query {
      * filters/produces the first level divisions list for a given country name
      * @param countryName name of country you're looking to produce a corresponding first level divisions list for
      * @return a list of first level division objects that match the country ID of the name given in the database
+     * @throws SQLException throws error if unable to get results from database
      */
     public static ObservableList<FirstLevelDivision> getFirstLevelDivisionsByCountry(String countryName) throws SQLException {
         // empty list to store results
@@ -462,6 +467,7 @@ public class Query {
      * takes the name of a first level division/state/province and returns the first level division ID from the first_level_divisions table in the database as an integer
      * @param firstLevelDivisionName name of first Level division that you want to get the ID for
      * @return the integer ID of the first level division name given
+     * @throws SQLException throws error if unable to get results from database
      */
     public static Integer getFirstLevelDivisionId(String firstLevelDivisionName) throws SQLException {
         try {

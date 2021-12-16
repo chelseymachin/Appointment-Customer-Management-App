@@ -62,6 +62,8 @@ public class CustomersScreen implements Initializable {
     /**
      * validates customer data and saves or rejects it based on validation results
      * @param event accepts event input from JavaFX to get current scene and window
+     * @throws IOException throws error if unable to load new screen
+     * @throws SQLException throws error if unable to save data to record
      */
     public void saveButtonHandler(javafx.event.ActionEvent event) throws IOException, SQLException {
         String customerId;
@@ -121,6 +123,7 @@ public class CustomersScreen implements Initializable {
     /**
      * makes sure a customer has been selected, then attempts to delete
      * @param event accepts event input from JavaFX to get current scene and window
+     * @throws IOException throws error if unable to load new screen
      */
     public void deleteButtonHandler(javafx.event.ActionEvent event) throws IOException {
         selectedCustomer = customersTable.getSelectionModel().getSelectedItem();
@@ -147,7 +150,8 @@ public class CustomersScreen implements Initializable {
 
     /**
      * brings user back to the appointments screen
-     * @param event accepts event input from JavaFX to get current scene and window
+     * @param event accepts event input from JavaFX to get current scene and windoW
+     * @throws IOException throws error if unable to load new screen
      */
     public void backButtonHandler(javafx.event.ActionEvent event) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
@@ -161,6 +165,7 @@ public class CustomersScreen implements Initializable {
     /**
      * confirms logout; on confirmation, logs out user and returns them to login screen
      * @param event accepts event input from JavaFX to get current scene and window
+     * @throws IOException throws error if unable to load new screen
      */
     public void logout(javafx.event.ActionEvent event) throws IOException {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);

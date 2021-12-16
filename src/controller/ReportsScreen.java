@@ -85,6 +85,7 @@ public class ReportsScreen implements Initializable {
      *
      * @param contactId String input of the selected contact/employee ID
      * @return String based report in the text window
+     * @throws SQLException throws error if unable to get results from database
      */
     public String getContactSchedules(String contactId) throws SQLException {
         reportTextArea.clear();
@@ -168,6 +169,7 @@ public class ReportsScreen implements Initializable {
      *
      * @param month String input of the selected month
      * @return String based report in the text window
+     * @throws SQLException throws error if unable to get results from database
      */
     public String getApptsByTypeMonth(String month) throws SQLException {
         reportTextArea.clear();
@@ -202,6 +204,7 @@ public class ReportsScreen implements Initializable {
     /** Takes user back to appointments screen
      *
      * @param event takes javafx event info to get source scene/window
+     * @throws IOException throws error if unable to load new screen
      */
     public void backButtonHandler(javafx.event.ActionEvent event) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
@@ -216,6 +219,7 @@ public class ReportsScreen implements Initializable {
      * logs out currently logged in user if they approve confirmation pop-up; resets app screen to login screen
      *
      * @param event takes javafx event info to get source scene/window
+     * @throws IOException throws error if unable to load new screen
      */
     public void logout(javafx.event.ActionEvent event) throws IOException {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);

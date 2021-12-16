@@ -76,6 +76,7 @@ public class AppointmentScreen implements Initializable {
     /**
      * logs out currently logged in user if they approve confirmation pop-up; resets app screen to login screen
      * @param event accepts event input from JavaFX to get current scene and window
+     * @throws IOException - throws error if unable to load new screen
      */
     public void logout(javafx.event.ActionEvent event) throws IOException {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -96,6 +97,7 @@ public class AppointmentScreen implements Initializable {
     /**
      * when delete appt button is pressed, checks to make sure there is a valid appointment selected (alerts otherwise) and then uses query function to delete the selected appt and refresh the appointment screen/table
      * @param event accepts event input from JavaFX to get current scene and window
+     * @throws IOException throws error if unable to load new screen
      */
     public void deleteApptButtonHandler(javafx.event.ActionEvent event) throws IOException {
         selectedAppointment = apptsTable.getSelectionModel().getSelectedItem();
@@ -123,6 +125,7 @@ public class AppointmentScreen implements Initializable {
     /**
      * goes to Customers Screen
      * @param event accepts event input from JavaFX to get current scene and window
+     * @throws IOException throws error if unable to load new screen
      */
     public void customersButtonHandler(javafx.event.ActionEvent event) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
@@ -136,6 +139,7 @@ public class AppointmentScreen implements Initializable {
     /**
      * goes to Reports Screen
      * @param event accepts event input from JavaFX to get current scene and window
+     * @throws IOException throws error if unable to load new screen
      */
     public void reportsButtonHandler(javafx.event.ActionEvent event) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/view/reportsScreen.fxml"));
@@ -333,6 +337,7 @@ public class AppointmentScreen implements Initializable {
     /**
      * validates appointment data and saves or rejects it based on validation results
      * @param event accepts event input from JavaFX to get current scene and window
+     * @throws IOException throws error if unable to load new screen
      */
     public void saveApptButtonHandler(javafx.event.ActionEvent event) throws IOException {
         // creating empty variables for all data

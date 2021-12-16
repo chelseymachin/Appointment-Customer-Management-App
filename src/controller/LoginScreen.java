@@ -49,6 +49,7 @@ public class LoginScreen implements Initializable {
     /**
      * validates that the username and password field have been filled in; provides error if not; checks for language default setting and translates error if in French
      * @param event accepts event input from JavaFX to get current scene and window
+     * @throws IOException throws error if unable to load new screen
      */
     public void loginButtonClick(javafx.event.ActionEvent event) throws IOException {
         if (usernameTextField.getText().isEmpty()) {
