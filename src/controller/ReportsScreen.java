@@ -94,16 +94,13 @@ public class ReportsScreen implements Initializable {
             StringBuilder reportText = new StringBuilder();
             reportText.append("Contact ID: " + contactId + " - Schedule\n...................................................................................................................................................................................................\n" +
                     "Date        |         Start    |    End   |   Appt ID   |    Title     |      Type      |        Description     |     Customer ID\n.......................................................................................................................................................................................................\n");
-            String sql = "SELECT *, COUNT(*) as NumberOfAppointments FROM appointments WHERE Contact_ID=? ORDER BY Start;";
+            String sql = "SELECT * FROM appointments WHERE Contact_ID=? ORDER BY Start;";
             PreparedStatement prepared = connection.prepareStatement(sql);
             prepared.setString(1, contactId);
             prepared.execute();
             ResultSet results = prepared.getResultSet();
 
             while (results.next()) {
-                if (results.getInt("NumberOfAppointments") == 0) {
-                    reportText.append("There's no scheduled appointments for contact ID " + contactId);
-                } else {
                     String date = results.getString("Start").substring(0, 10);
                     String start = results.getString("Start").substring(11, 16);
                     String end = results.getString("End").substring(11, 16);
@@ -114,7 +111,6 @@ public class ReportsScreen implements Initializable {
                     String appointmentId = results.getString("Appointment_ID");
 
                     reportText.append(date + "   |   " + start + "   |   " + end + "   |   " + appointmentId + "    |  " + title + " | " + type + " | " +  description + " |  " +  customerId + "\n\n");
-                }
             }
             return reportText.toString();
         } catch (SQLException exception) {
@@ -136,16 +132,13 @@ public class ReportsScreen implements Initializable {
             reportText.append("Customer ID: " + customerId + " - Schedule\n...................................................................................................................................................................................................\n" +
                     "Date        |         Start    |    End   |   Appt ID   |    Title     |      Type      |        Description     |     Contact ID\n.......................................................................................................................................................................................................\n");
 
-            String sql = "SELECT *, COUNT(*) as NumberOfAppointments FROM appointments WHERE Customer_ID=? ORDER BY Start;";
+            String sql = "SELECT * FROM appointments WHERE Customer_ID=? ORDER BY Start;";
             PreparedStatement prepared = connection.prepareStatement(sql);
             prepared.setString(1, customerId);
             prepared.execute();
             ResultSet results = prepared.getResultSet();
 
             while (results.next()) {
-                if (results.getInt("NumberOfAppointments") == 0) {
-                    reportText.append("There's no scheduled appointments for customer ID " + customerId);
-                } else {
                     String date = results.getString("Start").substring(0, 10);
                     String start = results.getString("Start").substring(11, 16);
                     String end = results.getString("End").substring(11, 16);
@@ -156,7 +149,6 @@ public class ReportsScreen implements Initializable {
                     String appointmentId = results.getString("Appointment_ID");
 
                     reportText.append(date + "   |   " + start + "   |   " + end + "   |   " + appointmentId + "    |  " + title + " | " + type + " | " +  description + " |  " +  contactId + "\n\n");
-                }
             }
             return reportText.toString();
         } catch (SQLException exception) {
@@ -181,7 +173,7 @@ public class ReportsScreen implements Initializable {
             reportText.append("Number of appointments by type in " + month + "\n" + "\n");
             reportText.append("# of Appts       |        Type \n...........................................................................................................\n");
 
-            String sql = "SELECT Type, COUNT(*) as NumberOfAppointments FROM appointments WHERE MONTHNAME(Start)=? ORDER BY Start;";
+            String sql = "SELECT Type, COUNT(*) AS NumberOfAppointments FROM appointments WHERE MONTHNAME(Start)=? GROUP BY Type;";
             PreparedStatement prepared = connection.prepareStatement(sql);
             prepared.setString(1, month);
             prepared.execute();
