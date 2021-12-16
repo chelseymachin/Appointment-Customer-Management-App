@@ -3,7 +3,6 @@ package controller;
 import DAO.Query;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -21,11 +20,13 @@ import model.User;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.ResourceBundle;
+
+import static DAO.DatabaseConnection.connection;
 
 public class CustomersScreen implements Initializable {
     public Button clearButton;
@@ -57,13 +58,18 @@ public class CustomersScreen implements Initializable {
     private User currentUser;
     Stage stage;
 
-    public void viewAllCustomers() {
-        Connection connection;
-
+    /**
+     * lambda function provides a functional interface for me to quickly view all customers on screen initialization
+     */
+    Runnable viewAllCustomers = () -> {
         try {
             customersObservableList.clear();
-            connection = DAO.DatabaseConnection.openConnection();
-            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM customers AS c INNER JOIN first_level_divisions AS d ON c.Division_ID = d.Division_ID INNER JOIN countries AS co ON co.Country_ID=d.COUNTRY_ID;");
+
+            String sql = "SELECT * FROM customers INNER JOIN first_level_divisions ON customers.Division_ID = first_level_divisions.Division_ID INNER JOIN countries ON countries.Country_ID=first_level_divisions.COUNTRY_ID;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.execute();
+            ResultSet results = prepared.getResultSet();
+
             while (results.next()) {
                 customersObservableList.add(new Customer(
                         results.getInt("Customer_ID"),
@@ -77,11 +83,15 @@ public class CustomersScreen implements Initializable {
                         ));
             }
             customersTable.setItems(customersObservableList);
-        } catch (Exception ex) {
-            System.out.println("Error with viewing all customers");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
         }
-    }
+    };
 
+    /**
+     * validates customer data and saves or rejects it based on validation results
+     * @param event accepts event input from JavaFX to get current scene and window
+     */
     public void saveButtonHandler(javafx.event.ActionEvent event) throws IOException, SQLException {
         String customerId;
         String customerName = null;
@@ -89,7 +99,6 @@ public class CustomersScreen implements Initializable {
         String fld = null;
         String zip = null;
         String phone = null;
-
 
         if (customerNameInput.getText().isEmpty() || customerAddressInput.getText().isEmpty() || stateComboBox.getSelectionModel().isEmpty() || countryComboBox.getSelectionModel().isEmpty() || postalCodeInput.getText().isEmpty() || customerPhoneInput.getText().isEmpty()) {
             Alert a = new Alert(Alert.AlertType.ERROR);
@@ -116,8 +125,6 @@ public class CustomersScreen implements Initializable {
                     Query.getFirstLevelDivisionId(fld),
                     userId
             );
-
-
         } else {
             try {
                 Query.addCustomer(
@@ -131,9 +138,7 @@ public class CustomersScreen implements Initializable {
             } catch (SQLException exception) {
                 System.out.println(exception.getMessage());
             }
-
         }
-
         Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
         Scene scene = new Scene(parent);
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
@@ -142,6 +147,10 @@ public class CustomersScreen implements Initializable {
         stage.show();
     }
 
+    /**
+     * makes sure a customer has been selected, then attempts to delete
+     * @param event accepts event input from JavaFX to get current scene and window
+     */
     public void deleteButtonHandler(javafx.event.ActionEvent event) throws IOException {
         selectedCustomer = customersTable.getSelectionModel().getSelectedItem();
         if(selectedCustomer instanceof Customer) {
@@ -165,6 +174,10 @@ public class CustomersScreen implements Initializable {
         }
     }
 
+    /**
+     * brings user back to the appointments screen
+     * @param event accepts event input from JavaFX to get current scene and window
+     */
     public void backButtonHandler(javafx.event.ActionEvent event) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
         Scene scene = new Scene(parent);
@@ -174,6 +187,10 @@ public class CustomersScreen implements Initializable {
         stage.show();
     }
 
+    /**
+     * confirms logout; on confirmation, logs out user and returns them to login screen
+     * @param event accepts event input from JavaFX to get current scene and window
+     */
     public void logout(javafx.event.ActionEvent event) throws IOException {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setHeaderText("Confirm logout");
@@ -190,7 +207,10 @@ public class CustomersScreen implements Initializable {
         }
     }
 
-    @FXML void filterFLDByCountry(ActionEvent event) {
+    /**
+     * Uses query function to filter combo box results for the first level division combo box when the country changes
+     */
+    public void filterFLDByCountry() {
         if (!countryComboBox.getSelectionModel().isEmpty()) {
             fldObservableList.clear();
             try {
@@ -201,13 +221,16 @@ public class CustomersScreen implements Initializable {
                     }
                 }
                 stateComboBox.setItems(fldObservableList);
-            } catch (SQLException e){
-                e.printStackTrace();
+            } catch (SQLException exception){
+                System.out.println(exception.getMessage());
             }
         }
     }
 
-    @FXML public void editButtonHandler(javafx.event.ActionEvent event) throws IOException {
+    /**
+     * validates that a customer has been selected from the table, then generates a selected country and first level division to populate combo boxes with before filling in all the form fields with the selected customer data
+     */
+    public void editButtonHandler() {
         selectedCustomer = customersTable.getSelectionModel().getSelectedItem();
         selectedCustomerCountry = selectedCustomer.getCustomerCountry();
         selectedCustomerFLD = selectedCustomer.getCustomerFirstLevelDivision();
@@ -228,7 +251,10 @@ public class CustomersScreen implements Initializable {
         }
     }
 
-    public void clearButtonHandler(ActionEvent actionEvent) {
+    /**
+     * clears all input fields and selected customer
+     */
+    public void clearButtonHandler() {
         customerIdInput.clear();
         customerNameInput.clear();
         customerAddressInput.clear();
@@ -238,8 +264,6 @@ public class CustomersScreen implements Initializable {
         countryComboBox.valueProperty().set(null);
         countryComboBox.setPromptText("Country");
         customerPhoneInput.clear();
-
-        customerIdInput.setDisable(false);
 
         this.selectedCustomer = null;
     }
@@ -254,7 +278,7 @@ public class CustomersScreen implements Initializable {
         countriesObservableList.clear();
         countriesObservableList = Query.getCountriesList();
         countryComboBox.setItems(countriesObservableList);
-        viewAllCustomers();
+        viewAllCustomers.run();
 
         customersIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         customersNameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -262,5 +286,4 @@ public class CustomersScreen implements Initializable {
         customersPostalCodeCol.setCellValueFactory(new PropertyValueFactory<>("zip"));
         customersPhoneCol.setCellValueFactory(new PropertyValueFactory<>("phoneNumber"));
     }
-
 }
