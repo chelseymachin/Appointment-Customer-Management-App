@@ -58,36 +58,7 @@ public class CustomersScreen implements Initializable {
     private User currentUser;
     Stage stage;
 
-    /**
-     * lambda function provides a functional interface for me to quickly view all customers on screen initialization
-     */
-    Runnable viewAllCustomers = () -> {
-        try {
-            customersObservableList.clear();
-
-            String sql = "SELECT * FROM customers INNER JOIN first_level_divisions ON customers.Division_ID = first_level_divisions.Division_ID INNER JOIN countries ON countries.Country_ID=first_level_divisions.COUNTRY_ID;";
-            PreparedStatement prepared = connection.prepareStatement(sql);
-            prepared.execute();
-            ResultSet results = prepared.getResultSet();
-
-            while (results.next()) {
-                customersObservableList.add(new Customer(
-                        results.getInt("Customer_ID"),
-                        results.getString("Customer_Name"),
-                        results.getString("Address"),
-                        results.getString("Division"),
-                        results.getInt("Division_ID"),
-                        results.getString("Postal_Code"),
-                        results.getString("Country"),
-                        results.getString("Phone")
-                        ));
-            }
-            customersTable.setItems(customersObservableList);
-        } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
-        }
-    };
-
+    // button handler functions
     /**
      * validates customer data and saves or rejects it based on validation results
      * @param event accepts event input from JavaFX to get current scene and window
@@ -208,26 +179,6 @@ public class CustomersScreen implements Initializable {
     }
 
     /**
-     * Uses query function to filter combo box results for the first level division combo box when the country changes
-     */
-    public void filterFLDByCountry() {
-        if (!countryComboBox.getSelectionModel().isEmpty()) {
-            fldObservableList.clear();
-            try {
-                ObservableList<FirstLevelDivision> firstLevelDivisions = Query.getFirstLevelDivisionsByCountry(countryComboBox.getSelectionModel().getSelectedItem().toString());
-                if (firstLevelDivisions != null) {
-                    for (FirstLevelDivision firstLevelDivision: firstLevelDivisions) {
-                        fldObservableList.add(firstLevelDivision.firstLevelDivisionName);
-                    }
-                }
-                stateComboBox.setItems(fldObservableList);
-            } catch (SQLException exception){
-                System.out.println(exception.getMessage());
-            }
-        }
-    }
-
-    /**
      * validates that a customer has been selected from the table, then generates a selected country and first level division to populate combo boxes with before filling in all the form fields with the selected customer data
      */
     public void editButtonHandler() {
@@ -267,6 +218,57 @@ public class CustomersScreen implements Initializable {
 
         this.selectedCustomer = null;
     }
+
+    // helper functions for combobox filling and table data filling
+    /**
+     * Uses query function to filter combo box results for the first level division combo box when the country changes
+     */
+    public void filterFLDByCountry() {
+        if (!countryComboBox.getSelectionModel().isEmpty()) {
+            fldObservableList.clear();
+            try {
+                ObservableList<FirstLevelDivision> firstLevelDivisions = Query.getFirstLevelDivisionsByCountry(countryComboBox.getSelectionModel().getSelectedItem().toString());
+                if (firstLevelDivisions != null) {
+                    for (FirstLevelDivision firstLevelDivision: firstLevelDivisions) {
+                        fldObservableList.add(firstLevelDivision.firstLevelDivisionName);
+                    }
+                }
+                stateComboBox.setItems(fldObservableList);
+            } catch (SQLException exception){
+                System.out.println(exception.getMessage());
+            }
+        }
+    }
+
+    /**
+     * lambda function provides a functional interface for me to quickly view all customers on screen initialization
+     */
+    Runnable viewAllCustomers = () -> {
+        try {
+            customersObservableList.clear();
+
+            String sql = "SELECT * FROM customers INNER JOIN first_level_divisions ON customers.Division_ID = first_level_divisions.Division_ID INNER JOIN countries ON countries.Country_ID=first_level_divisions.COUNTRY_ID;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.execute();
+            ResultSet results = prepared.getResultSet();
+
+            while (results.next()) {
+                customersObservableList.add(new Customer(
+                        results.getInt("Customer_ID"),
+                        results.getString("Customer_Name"),
+                        results.getString("Address"),
+                        results.getString("Division"),
+                        results.getInt("Division_ID"),
+                        results.getString("Postal_Code"),
+                        results.getString("Country"),
+                        results.getString("Phone")
+                ));
+            }
+            customersTable.setItems(customersObservableList);
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
+    };
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {

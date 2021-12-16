@@ -40,13 +40,12 @@ public class LoginScreen implements Initializable {
     User currentUser;
     Stage stage;
 
-    @FXML public void exitButtonClick(javafx.event.ActionEvent event) throws IOException {
+    public void exitButtonClick() {
         stage = (Stage) loginScreenPane.getScene().getWindow();
         stage.close();
     }
 
-
-    @FXML public void loginButtonClick(javafx.event.ActionEvent event) throws IOException {
+    public void loginButtonClick(javafx.event.ActionEvent event) throws IOException {
         if (usernameTextField.getText().isEmpty()) {
             Alert a = new Alert(Alert.AlertType.ERROR);
             if (Locale.getDefault().getLanguage().equals("fr")) {
@@ -105,16 +104,16 @@ public class LoginScreen implements Initializable {
         };
     }
 
-    @FXML public void loginButtonHover(javafx.event.Event event) {
+    public void loginButtonHover() {
         loginButton.setStyle("-fx-background-color: #FFF");
     }
 
-    @FXML public void loginButtonExitHover(javafx.event.Event event) {
+    public void loginButtonExitHover() {
         loginButton.setStyle("-fx-background-color:  #C1CEFE");
     }
 
     /** creates a file */
-    @FXML public void createLoginActivityFile(){
+    public void createLoginActivityFile(){
         try {
             File file = new File("logs/login_activity.txt");
             if (file.createNewFile()) {
@@ -122,26 +121,29 @@ public class LoginScreen implements Initializable {
             } else {
                 System.out.println("File already exists. Location: "+ file.getPath());
             }
-        } catch (IOException e){
-            e.printStackTrace();
+        } catch (IOException exception){
+            System.out.println(exception.getMessage());
         }
     }
 
-    @FXML public void addLoginAttempt(String username, Boolean loggedInSuccessfully) throws IOException {
-        FileWriter fileWriter = new FileWriter("logs/login_activity.txt", true);
-        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+    public void addLoginAttempt(String username, Boolean loggedInSuccessfully) {
+        try {
+            FileWriter fileWriter = new FileWriter("logs/login_activity.txt", true);
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 
-        bufferedWriter.write(username + " attempted a login at " + Timestamp.valueOf(LocalDateTime.now()));
-        bufferedWriter.newLine();
+            bufferedWriter.write(username + " attempted a login at " + Timestamp.valueOf(LocalDateTime.now()));
+            bufferedWriter.newLine();
 
-        if (loggedInSuccessfully) {
-            bufferedWriter.write(username + "'s login attempt was a success!" );
-        } else {
-            bufferedWriter.write(username + "'s login attempt failed!");
+            if (loggedInSuccessfully) {
+                bufferedWriter.write(username + "'s login attempt was a success!" );
+            } else {
+                bufferedWriter.write(username + "'s login attempt failed!");
+            }
+            bufferedWriter.newLine();
+            bufferedWriter.close();
+        } catch (IOException exception) {
+            System.out.println(exception.getMessage());
         }
-
-        bufferedWriter.newLine();
-        bufferedWriter.close();
     }
 
     @Override
@@ -159,7 +161,6 @@ public class LoginScreen implements Initializable {
             passwordTextField.setPromptText(rb.getString("password"));
         }
     }
-
 }
 
 
