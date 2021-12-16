@@ -1,6 +1,5 @@
 package controller;
 
-import DAO.DatabaseConnection;
 import DAO.Query;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -14,15 +13,15 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
+import static DAO.DatabaseConnection.connection;
+
 public class ReportsScreen implements Initializable {
-
-
     public TextArea reportTextArea;
     public Button apptsByTypeMonthButton;
     public Button consultantSchedulesButton;
@@ -32,29 +31,46 @@ public class ReportsScreen implements Initializable {
     public ComboBox contactIdsComboBox;
     public ComboBox customerIdsComboBox;
 
-    public void reportOneButtonHandler(javafx.event.ActionEvent event) throws SQLException {
-        if (monthsComboBox.getValue() != null) {
-            String selectedMonth = monthsComboBox.getValue().toString();
-            reportTextArea.setText(getApptsByTypeMonth(selectedMonth));
-        } else {
-            Alert a = new Alert(Alert.AlertType.ERROR);
-            a.setContentText("Please select a month to see all appointment types and totals for that month!");
-            a.showAndWait();
+    /**
+     * shows a report that displays all the types and totals of appointments for a selected month
+     */
+    public void reportOneButtonHandler() {
+        try {
+            if (monthsComboBox.getValue() != null) {
+                String selectedMonth = monthsComboBox.getValue().toString();
+                reportTextArea.setText(getApptsByTypeMonth(selectedMonth));
+            } else {
+                Alert a = new Alert(Alert.AlertType.ERROR);
+                a.setContentText("Please select a month to see all appointment types and totals for that month!");
+                a.showAndWait();
+            }
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
         }
     }
 
-    public void reportTwoButtonHandler(javafx.event.ActionEvent event) throws SQLException {
-        if (contactIdsComboBox.getValue() != null) {
-            String selectedContactId = contactIdsComboBox.getValue().toString();
-            reportTextArea.setText(getContactSchedules(selectedContactId));
-        } else {
-            Alert a = new Alert(Alert.AlertType.ERROR);
-            a.setContentText("Please select a contact ID to see that employee's schedule");
-            a.showAndWait();
+    /**
+     * shows a report that displays all upcoming appointments for a selected employee/contact
+     */
+    public void reportTwoButtonHandler() {
+        try {
+            if (contactIdsComboBox.getValue() != null) {
+                String selectedContactId = contactIdsComboBox.getValue().toString();
+                reportTextArea.setText(getContactSchedules(selectedContactId));
+            } else {
+                Alert a = new Alert(Alert.AlertType.ERROR);
+                a.setContentText("Please select a contact ID to see that employee's schedule");
+                a.showAndWait();
+            }
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
         }
     }
 
-    public void reportThreeButtonHandler(javafx.event.ActionEvent event) {
+    /**
+     * shows a report that displays all upcoming appointments for a selected customer
+     */
+    public void reportThreeButtonHandler() {
         if (customerIdsComboBox.getValue() != null) {
             String selectedCustomerId = customerIdsComboBox.getValue().toString();
             reportTextArea.setText(getApptsByCustomerId(selectedCustomerId));
@@ -65,17 +81,23 @@ public class ReportsScreen implements Initializable {
         }
     }
 
+    /** Function that builds a string based report using StringBuilder object of a selected contact's schedule of appointments in the database
+     *
+     * @param contactId String input of the selected contact/employee ID
+     * @return String based report in the text window
+     */
     public String getContactSchedules(String contactId) throws SQLException {
         reportTextArea.clear();
         contactIdsComboBox.getSelectionModel().clearSelection();
-        Connection connection = DatabaseConnection.openConnection();
-
         try {
             StringBuilder reportText = new StringBuilder();
-
             reportText.append("Contact ID: " + contactId + " - Schedule\n...................................................................................................................................................................................................\n" +
                     "Date        |         Start    |    End   |   Appt ID   |    Title     |      Type      |        Description     |     Customer ID\n.......................................................................................................................................................................................................\n");
-            ResultSet results = connection.createStatement().executeQuery(String.format("SELECT *, COUNT(*) as NumberOfAppointments FROM appointments a INNER JOIN customers c ON a.Customer_ID=c.Customer_ID WHERE Contact_ID='%s' ORDER BY Start;", contactId));
+            String sql = "SELECT *, COUNT(*) as NumberOfAppointments FROM appointments WHERE Contact_ID=? ORDER BY Start;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, contactId);
+            prepared.execute();
+            ResultSet results = prepared.getResultSet();
 
             while (results.next()) {
                 if (results.getInt("NumberOfAppointments") == 0) {
@@ -87,7 +109,6 @@ public class ReportsScreen implements Initializable {
                     String title = results.getString("Title");
                     String description = results.getString("Description").substring(0, Math.min(results.getString("Description").length(), 15));;
                     String type = results.getString("Type");
-
                     String customerId = results.getString("Customer_ID");
                     String appointmentId = results.getString("Appointment_ID");
 
@@ -95,23 +116,30 @@ public class ReportsScreen implements Initializable {
                 }
             }
             return reportText.toString();
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-            System.out.println("Error in generating contact schedules report");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
             return "Oops! Something went wrong!";
         }
     }
 
+    /** Function that builds a string based report using StringBuilder object of a selected customer's schedule of appointments in the database
+     *
+     * @param customerId String input of the selected customer
+     * @return String based report in the text window
+     */
     public String getApptsByCustomerId(String customerId) {
         reportTextArea.clear();
         customerIdsComboBox.getSelectionModel().clearSelection();
-        Connection connection = DatabaseConnection.openConnection();
-
         try {
             StringBuilder reportText = new StringBuilder();
             reportText.append("Customer ID: " + customerId + " - Schedule\n...................................................................................................................................................................................................\n" +
                     "Date        |         Start    |    End   |   Appt ID   |    Title     |      Type      |        Description     |     Contact ID\n.......................................................................................................................................................................................................\n");
-            ResultSet results = connection.createStatement().executeQuery(String.format("SELECT *, COUNT(*) as NumberOfAppointments FROM appointments a INNER JOIN customers c ON a.Customer_ID=c.Customer_ID WHERE a.Customer_ID='%s' ORDER BY Start;", customerId));
+
+            String sql = "SELECT *, COUNT(*) as NumberOfAppointments FROM appointments WHERE Customer_ID=? ORDER BY Start;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, customerId);
+            prepared.execute();
+            ResultSet results = prepared.getResultSet();
 
             while (results.next()) {
                 if (results.getInt("NumberOfAppointments") == 0) {
@@ -130,25 +158,33 @@ public class ReportsScreen implements Initializable {
                 }
             }
             return reportText.toString();
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-            System.out.println("Error in generating customer schedules report");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
             return "Oops! Something went wrong!";
         }
     }
 
+    /** Function that builds a string based report using StringBuilder object of a selected month's type of appointments and number of those types
+     *
+     * @param month String input of the selected month
+     * @return String based report in the text window
+     */
     public String getApptsByTypeMonth(String month) throws SQLException {
         reportTextArea.clear();
         monthsComboBox.valueProperty().set(null);
         monthsComboBox.setPromptText("Month...");
-        Connection connection = DatabaseConnection.openConnection();
 
         try {
             StringBuilder reportText = new StringBuilder();
             reportText.append("Number of appointments by type in " + month + "\n" + "\n");
             reportText.append("# of Appts       |        Type \n...........................................................................................................\n");
 
-            ResultSet results = connection.createStatement().executeQuery(String.format("SELECT Type, COUNT(*) as NumberOfAppointments FROM appointments WHERE MONTHNAME(Start)='%s'", month));
+            String sql = "SELECT Type, COUNT(*) as NumberOfAppointments FROM appointments WHERE MONTHNAME(Start)=? ORDER BY Start;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, month);
+            prepared.execute();
+            ResultSet results = prepared.getResultSet();
+
             while (results.next()) {
                 if(results.getInt("NumberOfAppointments") == 0) {
                     reportText.append("We have no appointments in this month of any type!");
@@ -157,12 +193,16 @@ public class ReportsScreen implements Initializable {
                 }
             }
             return reportText.toString();
-        } catch (Exception ex) {
-            System.out.println("Error in generating appts report by type for " + month);
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
             return "Oops! Something went wrong!";
         }
     }
 
+    /** Takes user back to appointments screen
+     *
+     * @param event takes javafx event info to get source scene/window
+     */
     public void backButtonHandler(javafx.event.ActionEvent event) throws IOException {
         Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
         Scene scene = new Scene(parent);
@@ -172,6 +212,11 @@ public class ReportsScreen implements Initializable {
         stage.show();
     }
 
+    /**
+     * logs out currently logged in user if they approve confirmation pop-up; resets app screen to login screen
+     *
+     * @param event takes javafx event info to get source scene/window
+     */
     public void logout(javafx.event.ActionEvent event) throws IOException {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setHeaderText("Confirm logout");
@@ -188,6 +233,10 @@ public class ReportsScreen implements Initializable {
         }
     }
 
+    /** generates a list of months for combobox population
+     *
+     * @return an Observable list of months as strings
+     */
     public static ObservableList<String> getMonths() {
         ObservableList<String> months = FXCollections.observableArrayList();
         months.add("January");
