@@ -1,10 +1,8 @@
 package controller;
 
-import DAO.DatabaseConnection;
 import DAO.Query;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -19,7 +17,6 @@ import model.User;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -75,9 +72,7 @@ public class AppointmentScreen implements Initializable {
     public static void passCurrentUserData(User currentUser) {
     }
 
-
     // button handlers for appointment screen buttons
-
     /**
      * logs out currently logged in user if they approve confirmation pop-up; resets app screen to login screen
      * @param event accepts event input from JavaFX to get current scene and window
@@ -276,38 +271,55 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
-
-    // helper functions that help me convert timezones within the application
-
-    /** converts a generic string time and date to a LocalDateTime object */
-    @FXML public static LocalDateTime stringToLDTConverter(String time, String date) {
+    // helper functions that help convert timezones within the application
+    /**
+     * converts a generic string time and date to a LocalDateTime object
+     * @param time accepts a time in a string format, preferably xx:xx:xx
+     * @param date accepts a date in a string format, preferably xxxx-xx-xx
+     * @return LocalDateTime object of the given string date and time; format is easy to move around and convert for timezone functionality and database records
+     */
+    public static LocalDateTime stringToLDTConverter(String time, String date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime ldt = LocalDateTime.parse(date + " " + time + ":00", formatter);
         return ldt;
     }
 
-    /** converts the user system's LocalDateTime to UTC timezone - this is to save the appointment to the  */
-    @FXML public static LocalDateTime usersLDTToUTC(LocalDateTime usersLocalDateTime) {
+    /**
+     * converts the user system's LocalDateTime to UTC timezone - this is to save the appointment to the database with the correct time
+     * @param usersLocalDateTime the LocalDateTime object that needs to be converted to UTC
+     * @return LocalDateTime object converted to UTC timezone
+     */
+    public static LocalDateTime usersLDTToUTC(LocalDateTime usersLocalDateTime) {
         return usersLocalDateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
     }
 
-    /** converts the user system's LocalDateTime to EST timezone - this is to ensure the appointment falls within business hours (which are in EST) */
-    @FXML public static LocalDateTime usersLDTToEST(LocalDateTime usersLocalDateTime) {
+    /**
+     * converts the user system's LocalDateTime to EST timezone - this is to ensure the appointment falls within business hours (which are in EST)
+     * @param usersLocalDateTime the LocalDateTime object that needs to be converted to EST
+     * @return LocalDateTime object converted to EST timezone
+     */
+    public static LocalDateTime usersLDTToEST(LocalDateTime usersLocalDateTime) {
         return usersLocalDateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("EST", ZoneId.SHORT_IDS)).toLocalDateTime();
     }
 
-    /** converts a UTC format LocalDateTime instance to the user system's LocalDateTime - this is for displaying all appts correctly in user timezone */
-    @FXML public static LocalDateTime utcToUsersLDT(LocalDateTime utcLocalDateTime) {
+    /**
+     * converts a UTC format LocalDateTime instance to the user system's LocalDateTime - this is for displaying all appts correctly in user timezone
+     * @param utcLocalDateTime the LocalDateTime object in a UTC timezone that needs to be converted to the user's local timezone
+     * @return LocalDateTime object converted to the user's local timezone timezone
+     */
+    public static LocalDateTime utcToUsersLDT(LocalDateTime utcLocalDateTime) {
         return utcLocalDateTime.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
     }
 
-    /** checks to see if the start and end LocalDateTime that are input are within the stated business hours (8 - 22 EST) */
-    @FXML public boolean isItWithinBusinessHours(LocalDateTime start, LocalDateTime end) {
-        LocalDateTime startConvertedToEST = usersLDTToEST(start);
-        LocalDateTime endConvertedToEST = usersLDTToEST(end);
-
-        LocalTime startLDTconvertedToLT = LocalTime.parse(startConvertedToEST.toString().substring(11, 16));
-        LocalTime endLDTConvertedToLT = LocalTime.parse(endConvertedToEST.toString().substring(11, 16));
+    /**
+     * checks to see if the start and end LocalDateTime that are input are within the stated business hours (8 - 22 EST)
+     * @param start LocalDateTime object of start time of appt (in pre-converted EST is expectation)
+     * @param end LocalDateTime object of end time of appt (in pre-converted EST is expectation)
+     * @return if start and end fall within EST business hours (8 - 22), then returns true; otherwise returns false
+     */
+    public boolean isItWithinBusinessHours(LocalDateTime start, LocalDateTime end) {
+        LocalTime startLDTconvertedToLT = LocalTime.parse(start.toString().substring(11, 16));
+        LocalTime endLDTConvertedToLT = LocalTime.parse(end.toString().substring(11, 16));
         LocalTime openLT = LocalTime.of(07, 59);
         LocalTime closeLT = LocalTime.of(22, 01);
 
@@ -318,9 +330,12 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
-    /** validates appointment data and saves or rejects it based on validation results */
-    public void saveApptButtonHandler(javafx.event.ActionEvent event) throws SQLException, IOException {
-        String apptId;
+    /**
+     * validates appointment data and saves or rejects it based on validation results
+     * @param event accepts event input from JavaFX to get current scene and window
+     */
+    public void saveApptButtonHandler(javafx.event.ActionEvent event) throws IOException {
+        // creating empty variables for all data
         String apptTitle = null;
         String apptType = null;
         String apptLocation = null;
@@ -335,15 +350,13 @@ public class AppointmentScreen implements Initializable {
         LocalDateTime endUTC = null;
         Integer userId = currentUser.getUserId();
 
-
+        // checks to see if any input areas are empty; if so, gives an error
         if (apptTypeInput.getText().isEmpty() || apptTitleInput.getText().isEmpty() || apptLocationInput.getText().isEmpty() || apptDescriptionInput.getText().isEmpty() || apptContactComboBox.getSelectionModel().isEmpty() || apptCustomerComboBox.getSelectionModel().isEmpty() || apptDatePicker.getValue() == null || apptStartTimeComboBox.getSelectionModel().isEmpty() || apptEndTimeComboBox.getSelectionModel().isEmpty()) {
-
-
-
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please enter a value/selection for all fields in order to save!");
             a.showAndWait();
         } else {
+            // saves all the input strings/data to the empty variables from before
             apptTitle = apptTitleInput.getText();
             apptType = apptTypeInput.getText();
             apptLocation = apptLocationInput.getText();
@@ -353,36 +366,43 @@ public class AppointmentScreen implements Initializable {
             LocalDate apptDate = apptDatePicker.getValue();
             String apptDateString = apptDate.toString();
 
+            // gets appt start date from combobox as string, converts it to LocalDateTime object, then converts it to EST and UTC to use for more validation below
             String apptStart = apptStartTimeComboBox.getValue().toString();
             startLocal = stringToLDTConverter(apptStart, apptDateString);
             startEST = usersLDTToEST(startLocal);
             startUTC = usersLDTToUTC(startLocal);
 
+            // gets appt end date from combobox as string, converts it to LocalDateTime object, then converts it to EST and UTC to use for more validation below
             String apptEnd = apptEndTimeComboBox.getValue().toString();
             endLocal = stringToLDTConverter(apptEnd, apptDateString);
             endEST = usersLDTToEST(endLocal);
             endUTC = usersLDTToUTC(endLocal);
 
-
+            // if appt ID is filled in, the user is attempting to edit an existing appt; so we will act accordingly below
             if (!apptIdInput.getText().isEmpty()) {
-
+                // passes pre-converted EST times of start/end of appt to see if proposed appt time is within EST business hours; if it is not, gives error and exits
                 if (!isItWithinBusinessHours(startEST, endEST)) {
                     Alert a = new Alert(Alert.AlertType.ERROR);
                     a.setContentText("Your appointment is set to begin at " + startEST.toString().substring(11, 16) + " EST and end at " + endEST.toString().substring(11, 16) + " EST, which is outside of our regular business hours (08:00 TO 22:00 EST). Please choose another start or end time!");
                     a.showAndWait();
                     return;
-                } else if (endLocal.isBefore(startLocal)) {
+                }
+                // if end of appt is before the start of the appt, give error and exit
+                else if (endLocal.isBefore(startLocal)) {
                     Alert a = new Alert(Alert.AlertType.ERROR);
                     a.setContentText("The end time you've selected is before your start time!  Better check that for accuracy, partner!");
                     a.showAndWait();
                     return;
-                }   else if (Query.doesItOverlapAnyExistingApptButItself(startUTC, endUTC, Integer.parseInt(apptCustomerComboBox.getValue().toString()), Integer.parseInt(apptIdInput.getText()))) {
+                }
+                // uses query function to check if appt only overlaps itself; if it overlaps any other appt but itself, gives error and exits
+                else if (Query.doesItOverlapAnyExistingApptButItself(startUTC, endUTC, Integer.parseInt(apptCustomerComboBox.getValue().toString()), Integer.parseInt(apptIdInput.getText()))) {
                     Alert a = new Alert(Alert.AlertType.ERROR);
                     a.setContentText("Your appointment collides with an appointment that already exists for this customer!  Please choose a new date or time and try again!");
                     a.showAndWait();
-
                     return;
-                } else {
+                }
+                // if it passes all validation above, the appt ID is updated in the record with all the new details; times are recorded in UTC
+                else {
                     Query.updateAppointment(
                             apptIdInput.getText(),
                             apptTitle,
@@ -396,30 +416,40 @@ public class AppointmentScreen implements Initializable {
                             userId
                     );
                 }
+                // reloads page
                 Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
                 Scene scene = new Scene(parent);
                 Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
                 stage.setScene(scene);
                 stage.setTitle("Appointments");
                 stage.show();
-            } else {
+            }
+            // this is the option for if the user is creating a new appt/the appt id box is blank when they've clicked save
+            else {
                 try {
+                    // make sure proposed appt falls within business hours in EST
                     if (!isItWithinBusinessHours(startEST, endEST)) {
                         Alert a = new Alert(Alert.AlertType.ERROR);
                         a.setContentText("Your appointment is set to begin at " + startEST.toString().substring(11, 16) + " EST and end at " + endEST.toString().substring(11, 16) + " EST, which is outside of our regular business hours (08:00 TO 22:00 EST). Please choose another start or end time!");
                         a.showAndWait();
                         return;
-                    } else if (endLocal.isBefore(startLocal)) {
+                    }
+                    // make sure appt doesn't end before it starts
+                    else if (endLocal.isBefore(startLocal)) {
                         Alert a = new Alert(Alert.AlertType.ERROR);
                         a.setContentText("The end time you've selected is before your start time!  Better check that for accuracy, partner!");
                         a.showAndWait();
                         return;
-                    }   else if (Query.doesItOverlapCustomersOtherAppointments(startUTC, endUTC, apptCustomer)) {
+                    }
+                    // uses query function to check if proposed appt overlaps any other existing appts for the same customer
+                    else if (Query.doesItOverlapCustomersOtherAppointments(startUTC, endUTC, apptCustomer)) {
                         Alert a = new Alert(Alert.AlertType.ERROR);
                         a.setContentText("Your appointment collides with an appointment that already exists for this customer!  Please choose a new date or time and try again!");
                         a.showAndWait();
                         return;
-                    } else {
+                    }
+                    // if it passes all validation, added to the record with the times in UTC
+                    else {
                         Query.addAppointment(
                                 apptTitle,
                                 apptType,
@@ -432,23 +462,28 @@ public class AppointmentScreen implements Initializable {
                                 userId
                         );
                     }
+
+                    // reload page
                     Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
                     Scene scene = new Scene(parent);
                     Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
                     stage.setScene(scene);
                     stage.setTitle("Appointments");
                     stage.show();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
+                } catch (SQLException exception) {
+                    System.out.println(exception.getMessage());
                 }
             }
         }
     }
     
-    /** checks to make sure an appointment has been selected then pulls all data from appointment record into appointment form on screen for editing */
-    public void editApptButtonHandler(ActionEvent actionEvent) {
+    /**
+     * checks to make sure an appointment has been selected then pulls all data from appointment record into appointment form on screen for editing
+     */
+    public void editApptButtonHandler() {
         selectedAppointment = apptsTable.getSelectionModel().getSelectedItem();
 
+        // checks to make sure that an appointment has been selected from the appointments table
         if (selectedAppointment instanceof Appointment) {
             apptIdInput.setText(selectedAppointment.getAppointmentId());
             apptTypeInput.setText(selectedAppointment.getType());
@@ -467,8 +502,10 @@ public class AppointmentScreen implements Initializable {
         }
     }
 
-    /** clears all fields in the form and resets selected appointment to none */
-    public void clearButtonHandler(ActionEvent actionEvent) {
+    /**
+     * clears all fields in the form and resets selected appointment to none
+     */
+    public void clearButtonHandler() {
         apptIdInput.clear();
         apptTypeInput.clear();
         apptTitleInput.clear();
@@ -483,58 +520,16 @@ public class AppointmentScreen implements Initializable {
         this.selectedAppointment = null;
     }
 
-
-    /** resets datePicker value to no value; gets all appointments screen records and uses them to populate the appointments table */
-    public void viewAllAppts() {
-        viewAppointmentsDatePicker.setValue(null);
-        Connection connection;
-        try {
-            appointmentsObservableList.clear();
-            connection = DatabaseConnection.openConnection();
-            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments, customers, users, contacts WHERE appointments.User_ID = users.User_ID AND appointments.Contact_ID = contacts.Contact_ID AND appointments.Customer_ID = customers.Customer_ID ORDER BY Start;");
-            while (results.next()) {
-                // converts all appts to user time so it can be displayed in their timezone
-                LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
-                LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
-
-                appointmentsObservableList.add(new Appointment(
-                        results.getString("Appointment_ID"),
-                        results.getString("Customer_ID"),
-                        results.getString("Title"),
-                        results.getString("Description"),
-                        results.getString("Location"),
-                        results.getString("Type"),
-                        apptStartConvertedToUserTime.toString(),
-                        apptStartConvertedToUserTime.toString(),
-                        apptEndConvertedToUserTime.toString(),
-                        results.getString("User_ID"),
-                        results.getString("Contact_ID")));
-            }
-            apptsTable.setItems(appointmentsObservableList);
-
-            apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
-            customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
-            titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-            descriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
-            locationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
-            contactCol.setCellValueFactory(new PropertyValueFactory<>("contactId"));
-            typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-            dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
-            startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
-            endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
-            userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
-        } catch (SQLException ex) {
-            System.out.println("Error getting all appointments");
-        }
+    /** a callable version of the lambda runner for the button press to view all appointments */
+    public void viewAllApptsRun() {
+        viewAllAppts.run();
     }
 
     /** lambda function provides a functional interface for me to quickly view all appointments on screen initialization */
-    @FXML Runnable viewAllAppts = () -> {
+    Runnable viewAllAppts = () -> {
         viewAppointmentsDatePicker.setValue(null);
-        Connection connection;
         try {
             appointmentsObservableList.clear();
-            connection = DatabaseConnection.openConnection();
             ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments, customers, users, contacts WHERE appointments.User_ID = users.User_ID AND appointments.Contact_ID = contacts.Contact_ID AND appointments.Customer_ID = customers.Customer_ID ORDER BY Start;");
             while (results.next()) {
                 // converts all appts to user time so it can be displayed in their timezone
@@ -567,8 +562,8 @@ public class AppointmentScreen implements Initializable {
             startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
             endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
             userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
-        } catch (SQLException ex) {
-            System.out.println("Error getting all appointments");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
         }
     };
 

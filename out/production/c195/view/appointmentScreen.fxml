@@ -140,7 +140,7 @@
             <Font name="System Bold" size="13.0" />
          </font>
       </ToggleButton>
-      <ToggleButton fx:id="viewAllToggle" layoutX="529.0" layoutY="244.0" mnemonicParsing="false" onAction="#viewAllAppts" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View All" textAlignment="CENTER" toggleGroup="$viewSelection" wrapText="true">
+      <ToggleButton fx:id="viewAllToggle" layoutX="529.0" layoutY="244.0" mnemonicParsing="false" onAction="#viewAllApptsRun" prefHeight="60.0" prefWidth="81.0" style="-fx-base: #ff6b6b; -fx-border-radius: 15px;" text="View All" textAlignment="CENTER" toggleGroup="$viewSelection" wrapText="true">
          <font>
             <Font name="System Bold" size="13.0" />
          </font>
