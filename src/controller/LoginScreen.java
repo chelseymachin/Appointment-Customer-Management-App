@@ -21,10 +21,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -40,11 +37,19 @@ public class LoginScreen implements Initializable {
     User currentUser;
     Stage stage;
 
+    // button handler functions
+    /**
+     * exits program
+     */
     public void exitButtonClick() {
         stage = (Stage) loginScreenPane.getScene().getWindow();
         stage.close();
     }
 
+    /**
+     * validates that the username and password field have been filled in; provides error if not; checks for language default setting and translates error if in French
+     * @param event accepts event input from JavaFX to get current scene and window
+     */
     public void loginButtonClick(javafx.event.ActionEvent event) throws IOException {
         if (usernameTextField.getText().isEmpty()) {
             Alert a = new Alert(Alert.AlertType.ERROR);
@@ -73,15 +78,22 @@ public class LoginScreen implements Initializable {
                 Connection connection;
                 try {
                     connection = DatabaseConnection.openConnection();
-                    ResultSet getUserInfo = connection.createStatement().executeQuery(String.format("SELECT User_ID, User_Name FROM users WHERE User_Name='%s'", username));
+
+                    String sql = "SELECT User_ID, User_Name From USERS where User_Name=?;";
+                    PreparedStatement prepared = connection.prepareStatement(sql);
+                    prepared.setString(1, username);
+                    prepared.execute();
+                    ResultSet getUserInfo = prepared.getResultSet();
                     getUserInfo.next();
+
+                    // creates currentUser object with data of currently logged in user
                     User currentUser = new User(getUserInfo.getString("User_ID"), getUserInfo.getString("User_Name"), true);
                     System.out.println("Current userId: " + currentUser.getUserId() + " userName: " + currentUser.getUsername());
                     this.currentUser = currentUser;
                     AppointmentScreen.passCurrentUserData(this.currentUser);
                     addLoginAttempt(username, true);
-                } catch (SQLException ex) {
-                    System.out.println("login failed");
+                } catch (SQLException exception) {
+                    System.out.println(exception.getMessage());
                 }
                 Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
                 Scene scene = new Scene(parent);
@@ -89,6 +101,7 @@ public class LoginScreen implements Initializable {
                 stage.setScene(scene);
                 stage.setTitle("Appointments");
                 stage.show();
+                // checks for upcoming appts for the currently logged in user
                 Query.checkForUpcomingAppts();
             } else {
                 addLoginAttempt(username, false);
@@ -104,10 +117,12 @@ public class LoginScreen implements Initializable {
         };
     }
 
+    /** function that changes the login button color when hovered in field */
     public void loginButtonHover() {
         loginButton.setStyle("-fx-background-color: #FFF");
     }
 
+    /** function that changes the login button color back when leaving button hover */
     public void loginButtonExitHover() {
         loginButton.setStyle("-fx-background-color:  #C1CEFE");
     }
@@ -126,6 +141,11 @@ public class LoginScreen implements Initializable {
         }
     }
 
+    /**
+     * adds a login attempt entry to the login activity file in the logs folder
+     * @param username the username of the user attempting to login
+     * @param loggedInSuccessfully the boolean value pertaining to whether or not the user successfully logged in
+     */
     public void addLoginAttempt(String username, Boolean loggedInSuccessfully) {
         try {
             FileWriter fileWriter = new FileWriter("logs/login_activity.txt", true);
