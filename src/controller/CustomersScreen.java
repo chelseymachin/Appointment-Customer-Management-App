@@ -36,6 +36,8 @@ public class CustomersScreen implements Initializable {
     @FXML private TableColumn<Customer, String> customersAddressCol;
     @FXML private TableColumn<Customer, String> customersPostalCodeCol;
     @FXML private TableColumn<Customer, String> customersPhoneCol;
+    @FXML private TableColumn<Customer, String> customersFirstLevelDivisionCol;
+    @FXML private TableColumn<Customer, String> customersCountryCol;
     @FXML private TextField customerIdInput;
     @FXML private TextField customerNameInput;
     @FXML private TextField customerAddressInput;
@@ -292,5 +294,7 @@ public class CustomersScreen implements Initializable {
         customersAddressCol.setCellValueFactory(new PropertyValueFactory<>("address"));
         customersPostalCodeCol.setCellValueFactory(new PropertyValueFactory<>("zip"));
         customersPhoneCol.setCellValueFactory(new PropertyValueFactory<>("phoneNumber"));
+        customersFirstLevelDivisionCol.setCellValueFactory(new PropertyValueFactory<>("firstLevelDivisionName"));
+        customersCountryCol.setCellValueFactory(new PropertyValueFactory<>("countryName"));
     }
 }

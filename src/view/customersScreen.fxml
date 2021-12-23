@@ -5,88 +5,90 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane fx:id="customersScreenPane" prefHeight="570.0" prefWidth="503.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.CustomersScreen">
+<AnchorPane fx:id="customersScreenPane" prefHeight="520.0" prefWidth="683.0" style="-fx-background-color: #C1CEFE;" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.CustomersScreen">
    <children>
-      <ImageView fitHeight="246.0" fitWidth="314.0" layoutX="214.0" layoutY="-4.0" pickOnBounds="true">
+      <ImageView fitHeight="256.0" fitWidth="341.0" layoutX="347.0" layoutY="-4.0" pickOnBounds="true">
          <image>
             <Image url="@../assets/customersScreenHeader.png" />
          </image>
       </ImageView>
-      <Label layoutX="12.0" layoutY="11.0" text="Customers">
+      <Label layoutX="9.0" layoutY="6.0" text="Customers">
          <font>
             <Font name="System Bold" size="36.0" />
          </font>
       </Label>
-      <TableView fx:id="customersTable" layoutX="16.0" layoutY="268.0" prefHeight="246.0" prefWidth="494.0" stylesheets="@styles/tableViewStyles.css">
+      <TableView fx:id="customersTable" layoutX="6.0" layoutY="246.0" prefHeight="222.0" prefWidth="677.0" stylesheets="@styles/tableViewStyles.css">
         <columns>
           <TableColumn fx:id="customersIdCol" prefWidth="71.0" text="ID" />
           <TableColumn fx:id="customersNameCol" prefWidth="119.0" text="Name" />
             <TableColumn fx:id="customersAddressCol" prefWidth="75.0" text="Address" />
             <TableColumn fx:id="customersPostalCodeCol" prefWidth="75.0" text="Postal Code" />
             <TableColumn fx:id="customersPhoneCol" prefWidth="75.0" text="Phone" />
+            <TableColumn fx:id="customersFirstLevelDivisionCol" prefWidth="75.0" text="State/Province" />
+            <TableColumn fx:id="customersCountryCol" prefWidth="75.0" text="Country" />
         </columns>
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <TextField fx:id="customerIdInput" layoutX="70.0" layoutY="61.0" prefHeight="25.0" prefWidth="80.0" style="-fx-background-color: #ff6b6b;" />
-      <Label layoutX="44.0" layoutY="63.0" text="ID">
+      <TextField fx:id="customerIdInput" layoutX="60.0" layoutY="61.0" prefHeight="25.0" prefWidth="80.0" style="-fx-background-color: #ff6b6b;" />
+      <Label layoutX="34.0" layoutY="63.0" text="ID">
          <font>
             <Font name="System Bold" size="14.0" />
          </font>
       </Label>
-      <TextField fx:id="customerNameInput" layoutX="69.0" layoutY="95.0" prefHeight="25.0" prefWidth="169.0" style="-fx-background-color: #ff6b6b;" />
-      <Label layoutX="20.0" layoutY="99.0" text="Name">
+      <TextField fx:id="customerNameInput" layoutX="59.0" layoutY="90.0" prefHeight="25.0" prefWidth="135.0" style="-fx-background-color: #ff6b6b;" />
+      <Label layoutX="10.0" layoutY="93.0" text="Name">
          <font>
             <Font name="System Bold" size="14.0" />
          </font>
       </Label>
-      <TextField fx:id="customerAddressInput" layoutX="69.0" layoutY="130.0" prefHeight="25.0" prefWidth="169.0" style="-fx-background-color: #ff6b6b;" />
-      <Label layoutX="7.0" layoutY="132.0" text="Address">
+      <TextField fx:id="customerAddressInput" layoutX="249.0" layoutY="60.0" prefHeight="25.0" prefWidth="161.0" style="-fx-background-color: #ff6b6b;" />
+      <Label layoutX="188.0" layoutY="64.0" text="Address">
          <font>
             <Font name="System Bold" size="14.0" />
          </font>
       </Label>
-      <TextField fx:id="postalCodeInput" layoutX="70.0" layoutY="165.0" prefHeight="25.0" prefWidth="67.0" style="-fx-background-color: #ff6b6b;" />
-      <Label alignment="CENTER_RIGHT" contentDisplay="RIGHT" layoutX="9.0" layoutY="157.0" prefHeight="45.0" prefWidth="53.0" text="Postal Code" textAlignment="RIGHT" wrapText="true">
+      <TextField fx:id="postalCodeInput" layoutX="250.0" layoutY="89.0" prefHeight="25.0" prefWidth="67.0" style="-fx-background-color: #ff6b6b;" />
+      <Label alignment="CENTER_RIGHT" contentDisplay="RIGHT" layoutX="189.0" layoutY="87.0" prefHeight="45.0" prefWidth="53.0" text="Postal Code" textAlignment="RIGHT" wrapText="true">
          <font>
             <Font name="System Bold" size="14.0" />
          </font>
       </Label>
-      <TextField fx:id="customerPhoneInput" layoutX="70.0" layoutY="234.0" prefHeight="25.0" prefWidth="135.0" style="-fx-background-color: #ff6b6b;" />
-      <Label layoutX="18.0" layoutY="237.0" text="Phone">
+      <TextField fx:id="customerPhoneInput" layoutX="60.0" layoutY="120.0" prefHeight="25.0" prefWidth="135.0" style="-fx-background-color: #ff6b6b;" />
+      <Label layoutX="8.0" layoutY="125.0" text="Phone">
          <font>
             <Font name="System Bold" size="14.0" />
          </font>
       </Label>
-      <ComboBox fx:id="stateComboBox" layoutX="143.0" layoutY="165.0" prefHeight="25.0" prefWidth="95.0" promptText="State/Province" style="-fx-background-color: #ff6b6b;" />
-      <ComboBox fx:id="countryComboBox" layoutX="70.0" layoutY="202.0" onAction="#filterFLDByCountry" prefHeight="25.0" prefWidth="135.0" promptText="Country" style="-fx-background-color: #ff6b6b;" />
-      <Button fx:id="backButton" layoutX="16.0" layoutY="523.0" mnemonicParsing="false" onAction="#backButtonHandler" prefHeight="8.0" prefWidth="61.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Back">
+      <ComboBox fx:id="stateComboBox" layoutX="250.0" layoutY="118.0" prefHeight="25.0" prefWidth="95.0" promptText="State/Province" style="-fx-background-color: #ff6b6b;" />
+      <ComboBox fx:id="countryComboBox" layoutX="249.0" layoutY="149.0" onAction="#filterFLDByCountry" prefHeight="25.0" prefWidth="135.0" promptText="Country" style="-fx-background-color: #ff6b6b;" />
+      <Button fx:id="backButton" layoutX="5.0" layoutY="472.0" mnemonicParsing="false" onAction="#backButtonHandler" prefHeight="8.0" prefWidth="61.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Back">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button fx:id="logoutButton" layoutX="421.0" layoutY="523.0" mnemonicParsing="false" onAction="#logout" prefHeight="39.0" prefWidth="88.0" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Logout" textFill="#809cff">
+      <Button fx:id="logoutButton" layoutX="595.0" layoutY="472.0" mnemonicParsing="false" onAction="#logout" prefHeight="39.0" prefWidth="88.0" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Logout" textFill="#809cff">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button fx:id="editButton" layoutX="250.0" layoutY="222.0" mnemonicParsing="false" onAction="#editButtonHandler" prefHeight="39.0" prefWidth="80.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Edit">
+      <Button fx:id="editButton" layoutX="7.0" layoutY="202.0" mnemonicParsing="false" onAction="#editButtonHandler" prefHeight="39.0" prefWidth="80.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Edit">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button fx:id="saveButton" layoutX="339.0" layoutY="221.0" mnemonicParsing="false" onAction="#saveButtonHandler" prefHeight="39.0" prefWidth="80.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Save">
+      <Button fx:id="saveButton" layoutX="96.0" layoutY="201.0" mnemonicParsing="false" onAction="#saveButtonHandler" prefHeight="39.0" prefWidth="80.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Save">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button fx:id="deleteButton" layoutX="428.0" layoutY="221.0" mnemonicParsing="false" onAction="#deleteButtonHandler" prefHeight="39.0" prefWidth="80.0" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Delete" textFill="#809cff">
+      <Button fx:id="deleteButton" layoutX="185.0" layoutY="201.0" mnemonicParsing="false" onAction="#deleteButtonHandler" prefHeight="39.0" prefWidth="80.0" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Delete" textFill="#809cff">
          <font>
             <Font size="18.0" />
          </font>
       </Button>
-      <Button fx:id="clearButton" layoutX="170.0" layoutY="57.0" mnemonicParsing="false" onAction="#clearButtonHandler" prefHeight="31.0" prefWidth="67.0" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Clear" textFill="#809cff">
+      <Button fx:id="clearButton" layoutX="58.0" layoutY="152.0" mnemonicParsing="false" onAction="#clearButtonHandler" prefHeight="31.0" prefWidth="67.0" style="-fx-background-color: WHITE; -fx-border-radius: 15px;" text="Clear" textFill="#809cff">
          <font>
             <Font size="15.0" />
          </font>
