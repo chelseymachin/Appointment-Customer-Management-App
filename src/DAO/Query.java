@@ -8,7 +8,10 @@ import model.Appointment;
 import model.FirstLevelDivision;
 import model.User;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -485,6 +488,23 @@ public class Query {
         }
         return null;
     }
+
+
+    public static ObservableList<User> getUsersList() {
+        ObservableList<User> usersList = FXCollections.observableArrayList();
+
+        try {
+            ResultSet results = connection.createStatement().executeQuery("SELECT User_ID, User_Name from users;");
+            // loops through results and adds a new User object to list of user objects to populate combo box
+            while(results.next()) {
+                usersList.add(new User(results.getInt("User_ID"), results.getString("User_Name")));
+            }
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
+        return usersList;
+    }
+
 
     /**
      * Gets all customers' IDs from the customers table in database and returns them as an observable list of Strings

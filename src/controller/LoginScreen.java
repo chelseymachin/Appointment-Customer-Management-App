@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -169,7 +170,8 @@ public class LoginScreen implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        locationLabel.setText(Locale.getDefault().getDisplayCountry());
+        ZoneId localZoneId = ZoneId.systemDefault();
+        locationLabel.setText(String.valueOf(localZoneId));
 
         createLoginActivityFile();
 
