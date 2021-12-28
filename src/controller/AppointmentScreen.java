@@ -593,7 +593,7 @@ public class AppointmentScreen implements Initializable {
         apptEndTimeComboBox.setItems(apptTimesList);
 
 
-        /** lambda function to set date picker to ONLY allow selections from future dates and non-weekend days */
+        /** lambda function to set date picker to ONLY allow selections from future dates and non-weekend days; this lambda is a lot easier than writing out two separate statements to complete this effect.  It's the perfect use for it because we're altering something using a function. */
         apptDatePicker.setDayCellFactory(picker -> new DateCell() {
             public void updateItem(LocalDate selectedDate, boolean empty) {
                 super.updateItem(selectedDate, empty);

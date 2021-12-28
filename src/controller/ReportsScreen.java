@@ -16,6 +16,8 @@ import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -101,9 +103,11 @@ public class ReportsScreen implements Initializable {
             ResultSet results = prepared.getResultSet();
 
             while (results.next()) {
-                    String date = results.getString("Start").substring(0, 10);
-                    String start = results.getString("Start").substring(11, 16);
-                    String end = results.getString("End").substring(11, 16);
+                    LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
+                    LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
+                    String date = apptStartConvertedToUserTime.toString().substring(0, 10);
+                    String start = apptStartConvertedToUserTime.toString().substring(11, 16);
+                    String end = apptEndConvertedToUserTime.toString().substring(11, 16);
                     String title = results.getString("Title");
                     String description = results.getString("Description").substring(0, Math.min(results.getString("Description").length(), 15));;
                     String type = results.getString("Type");
@@ -139,9 +143,11 @@ public class ReportsScreen implements Initializable {
             ResultSet results = prepared.getResultSet();
 
             while (results.next()) {
-                    String date = results.getString("Start").substring(0, 10);
-                    String start = results.getString("Start").substring(11, 16);
-                    String end = results.getString("End").substring(11, 16);
+                    LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
+                    LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
+                    String date = apptStartConvertedToUserTime.toString().substring(0, 10);
+                    String start = apptStartConvertedToUserTime.toString().substring(11, 16);
+                    String end = apptEndConvertedToUserTime.toString().substring(11, 16);
                     String title = results.getString("Title");
                     String description = results.getString("Description").substring(0, Math.min(results.getString("Description").length(), 15));;
                     String type = results.getString("Type");
@@ -155,6 +161,15 @@ public class ReportsScreen implements Initializable {
             System.out.println(exception.getMessage());
             return "Oops! Something went wrong!";
         }
+    }
+
+    /**
+     * converts a UTC format LocalDateTime instance to the user system's LocalDateTime - this is for displaying all appts correctly in user timezone
+     * @param utcLocalDateTime the LocalDateTime object in a UTC timezone that needs to be converted to the user's local timezone
+     * @return LocalDateTime object converted to the user's local timezone timezone
+     */
+    public static LocalDateTime utcToUsersLDT(LocalDateTime utcLocalDateTime) {
+        return utcLocalDateTime.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
     }
 
     /** Function that builds a string based report using StringBuilder object of a selected month's type of appointments and number of those types
