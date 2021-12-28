@@ -530,7 +530,7 @@ public class AppointmentScreen implements Initializable {
         viewAllAppts.run();
     }
 
-    /** lambda function provides a functional interface for me to quickly view all appointments on screen initialization */
+    /** lambda function provides a functional interface for me to quickly view all appointments on screen initialization; putting this into a lambda function allows me to execute it as a runnable function on demand, which is handier than putting all of it in my initialization manually.  It also means that I can call it from other places on demand as well! */
     Runnable viewAllAppts = () -> {
         viewAppointmentsDatePicker.setValue(null);
         try {
