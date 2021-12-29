@@ -5,6 +5,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
 import model.Appointment;
+import model.Customer;
 import model.FirstLevelDivision;
 import model.User;
 
@@ -489,6 +490,27 @@ public class Query {
         return null;
     }
 
+    /**
+     * takes the ID of a first level division/state/province and returns the first level division name from the first_level_divisions table in the database as a string
+     * @param firstLevelDivisionId ID of first Level division that you want to get the name for
+     * @return the string name of the first level division ID given
+     * @throws SQLException throws error if unable to get results from database
+     */
+    public static String getFirstLevelDivisionName(Integer firstLevelDivisionId) throws SQLException {
+        try {
+            String sql = "SELECT Division_ID, Division FROM first_level_divisions WHERE Division_ID=?";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setInt(1, firstLevelDivisionId);
+            prepared.execute();
+
+            ResultSet results = prepared.getResultSet();
+            return results.getString("Division");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
+        return null;
+    }
+
 
     public static ObservableList<User> getUsersList() {
         ObservableList<User> usersList = FXCollections.observableArrayList();
@@ -505,21 +527,47 @@ public class Query {
         return usersList;
     }
 
+    public static String getCountryNameFromFirstLevelDivisionID(Integer firstLevelDivisionID) throws SQLException {
+        try {
+            String sql = "SELECT Country, Division_ID FROM first_level_divisions INNER JOIN countries ON first_level_divisions.Country_ID = countries.Country_ID WHERE Division_ID=?;";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setInt(1, firstLevelDivisionID);
+            prepared.execute();
+
+            ResultSet results = prepared.getResultSet();
+            return results.getString("Country");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        }
+        return null;
+    }
 
     /**
      * Gets all customers' IDs from the customers table in database and returns them as an observable list of Strings
      * @return an observable list of customer IDs to populate a combobox easily with
      */
-    public static ObservableList<String> getCustomersList() {
+    public static ObservableList<Customer> getCustomersList() {
         // creates empty observable list to store results in
-        ObservableList<String> customersList = FXCollections.observableArrayList();
-
+        ObservableList<Customer> customersList = FXCollections.observableArrayList();
 
         try {
-            ResultSet results = connection.createStatement().executeQuery("SELECT Customer_ID, Customer_Name from customers;");
+            ResultSet results = connection.createStatement().executeQuery("SELECT * from customers;");
             // loops through results and adds a new ID to list of customer IDs for each result
             while(results.next()) {
-                customersList.add(results.getString("Customer_ID"));
+                Integer firstLevelDivisionID = results.getInt("Division_ID");
+                String firstLevelDivisionName = getFirstLevelDivisionName(firstLevelDivisionID);
+                String countryName = getCountryNameFromFirstLevelDivisionID(firstLevelDivisionID);
+
+                customersList.add(new Customer(
+                        results.getInt("Customer_ID"),
+                        results.getString("Customer_Name"),
+                        results.getString("Address"),
+                        firstLevelDivisionName,
+                        firstLevelDivisionID,
+                        results.getString("Postal_Code"),
+                        countryName,
+                        results.getString("Phone")
+                ));
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
