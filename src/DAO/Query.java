@@ -5,6 +5,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
 import model.Appointment;
+import model.Contact;
 import model.FirstLevelDivision;
 import model.User;
 
@@ -531,15 +532,18 @@ public class Query {
      * Gets all contacts' IDs from the contacts table in database and returns them as an observable list of Strings
      * @return an observable list of contact IDs to populate a combobox easily with
      */
-    public static ObservableList<String> getContacts() {
+    public static ObservableList<Contact> getContacts() {
         // creates empty observable list to store results in
-        ObservableList<String> contactsList = FXCollections.observableArrayList();
+        ObservableList<Contact> contactsList = FXCollections.observableArrayList();
 
         try {
-            ResultSet results = connection.createStatement().executeQuery("SELECT Contact_ID from contacts;");
+            ResultSet results = connection.createStatement().executeQuery("SELECT * from contacts;");
             // loops through results and adds a new ID to list of contact IDs for each result
             while(results.next()) {
-                contactsList.add(results.getString("Contact_ID"));
+                contactsList.add(new Contact(
+                        results.getInt("Contact_ID"),
+                        results.getString("Contact_Name")
+                ));
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());

@@ -13,6 +13,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import model.Appointment;
+import model.Contact;
 import model.User;
 
 import java.io.IOException;
@@ -59,7 +60,8 @@ public class AppointmentScreen implements Initializable {
     ObservableList<Appointment> appointmentsObservableList = FXCollections.observableArrayList();
     ObservableList<Appointment> appointmentsByMonthObservableList = FXCollections.observableArrayList();
     ObservableList<Appointment> appointmentsByWeekObservableList = FXCollections.observableArrayList();
-    ObservableList<String> contactsList = FXCollections.observableArrayList();
+
+    ObservableList<Contact> contactsList = FXCollections.observableArrayList();
     ObservableList<String> customersList = FXCollections.observableArrayList();
     ObservableList<String> apptTimesList = FXCollections.observableArrayList();
     Appointment selectedAppointment;
