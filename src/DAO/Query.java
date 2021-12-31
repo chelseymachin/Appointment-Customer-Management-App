@@ -6,10 +6,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
 import model.*;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -28,9 +25,10 @@ public class Query {
      * @return true if matching record exists in database; false if not
      */
     public static boolean loginAttempt(String username, String password) {
+        Connection connection;
         try{
             // open connection to DB
-            DatabaseConnection.openConnection();
+            connection = DatabaseConnection.openConnection();
 
             // prep SQL statement; then insert variables from function input
             String sql = "SELECT User_Name, Password FROM users WHERE User_Name=? AND Password=?";
@@ -47,6 +45,8 @@ public class Query {
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
             return false;
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     }
 
@@ -54,7 +54,9 @@ public class Query {
      * Checks currently logged in user's ID and uses that to search through appointments in the database for any matching appointments starting within 15 minutes of user's local time, then produces alert to notify
      */
     public static void checkForUpcomingAppts() {
+        Connection connection;
             try {
+                connection = DatabaseConnection.openConnection();
                 // create result set from query attempt with currently logged in user as input
                 ResultSet apptResults = connection.createStatement().executeQuery(String.format("SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID='%s' AND a.Start BETWEEN '%s' AND '%s'", User.getUserId(), LocalDateTime.now(ZoneId.of("UTC")), LocalDateTime.now(ZoneId.of("UTC")).plusMinutes(15)));
 
@@ -73,6 +75,8 @@ public class Query {
                 }
             } catch (SQLException exception) {
                 System.out.println(exception.getMessage());
+            } finally {
+                DatabaseConnection.closeConnection();
             }
     }
 
@@ -389,10 +393,12 @@ public class Query {
      * @return a list of first level division names that exist in the first_level_divisions table of the database
      */
     public static ObservableList<String> getFirstLevelDivisionsList() {
+        Connection connection;
         // empty string list to store the results
         ObservableList<String> firstLevelDivisionsList = FXCollections.observableArrayList();
 
         try {
+            connection = DatabaseConnection.openConnection();
             // queries the database to return the name of the division for each record in database list
             ResultSet results = connection.createStatement().executeQuery("SELECT Division FROM first_level_divisions;");
 
@@ -402,6 +408,8 @@ public class Query {
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
         return firstLevelDivisionsList;
     }
@@ -411,10 +419,12 @@ public class Query {
      * @return a list of country names that exist in the countries table of the database
      */
     public static ObservableList<String> getCountriesList() {
+        Connection connection;
         // empty string list to store the results
         ObservableList<String> countriesList = FXCollections.observableArrayList();
 
         try {
+            connection = DatabaseConnection.openConnection();
             // queries the database to return the name of the country for each record in database list
             ResultSet results = connection.createStatement().executeQuery("SELECT Country from countries;");
 
@@ -424,6 +434,8 @@ public class Query {
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
         return countriesList;
     }
@@ -490,8 +502,10 @@ public class Query {
 
     public static ObservableList<User> getUsersList() {
         ObservableList<User> usersList = FXCollections.observableArrayList();
+        Connection connection;
 
         try {
+            connection = DatabaseConnection.openConnection();
             ResultSet results = connection.createStatement().executeQuery("SELECT User_ID, User_Name from users ORDER BY User_ID;");
 
             // loops through results and adds a new User object to list of user objects to populate combo box
@@ -503,6 +517,8 @@ public class Query {
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
         return usersList;
     }
@@ -513,10 +529,12 @@ public class Query {
      * @return an observable list of customer IDs to populate a combobox easily with
      */
     public static ObservableList<Customer> getCustomersList() {
+        Connection connection;
         // creates empty observable list to store results in
         ObservableList<Customer> customersList = FXCollections.observableArrayList();
 
         try {
+            connection = DatabaseConnection.openConnection();
             ResultSet results = connection.createStatement().executeQuery("SELECT Customer_ID, Customer_Name from customers;");
             // loops through results and adds a new ID to list of customer IDs for each result
             while(results.next()) {
@@ -527,6 +545,8 @@ public class Query {
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
         return customersList;
     }
@@ -536,10 +556,12 @@ public class Query {
      * @return an observable list of contact IDs to populate a combobox easily with
      */
     public static ObservableList<Contact> getContacts() {
+        Connection connection;
         // creates empty observable list to store results in
         ObservableList<Contact> contactsList = FXCollections.observableArrayList();
 
         try {
+            connection = DatabaseConnection.openConnection();
             ResultSet results = connection.createStatement().executeQuery("SELECT * from contacts;");
             // loops through results and adds a new ID to list of contact IDs for each result
             while(results.next()) {
@@ -550,6 +572,8 @@ public class Query {
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
         return contactsList;
     }
@@ -592,9 +616,11 @@ public class Query {
      * @return an observable list of appointments from the database that are converted to the user's local timezone
      */
     public static ObservableList<Appointment> getAllAppointments() {
+        Connection connection;
         // an empty list to store the results in
         ObservableList<Appointment> appointmentsList = FXCollections.observableArrayList();
         try {
+            connection = DatabaseConnection.openConnection();
             // saves results from query into ResultSet object
             ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments ORDER BY Start;");
 
@@ -620,6 +646,8 @@ public class Query {
             return appointmentsList;
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
         return null;
     }

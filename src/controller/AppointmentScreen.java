@@ -1,5 +1,6 @@
 package controller;
 
+import DAO.DatabaseConnection;
 import DAO.Query;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,6 +20,7 @@ import model.User;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -230,8 +232,9 @@ public class AppointmentScreen implements Initializable {
         } else {
             // gets date and year from datepicker element
             LocalDate selectedDate = viewAppointmentsDatePicker.getValue();
-
+            Connection connection;
             try {
+                connection = DatabaseConnection.openConnection();
                 // clears the current observable list set for appointments by week view (just in case a previous has been selected)
                 appointmentsByMonthObservableList.clear();
 
@@ -276,6 +279,8 @@ public class AppointmentScreen implements Initializable {
                 userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
             } catch (SQLException exception) {
                 System.out.println(exception.getMessage());
+            } finally {
+                DatabaseConnection.closeConnection();
             }
         }
     }
@@ -562,9 +567,11 @@ public class AppointmentScreen implements Initializable {
 
     /** lambda function provides a functional interface for me to quickly view all appointments on screen initialization; putting this into a lambda function allows me to execute it as a runnable function on demand, which is handier than putting all of it in my initialization manually.  It also means that I can call it from other places on demand as well! */
     Runnable viewAllAppts = () -> {
+        Connection connection;
         viewAppointmentsDatePicker.setValue(null);
         try {
             appointmentsObservableList.clear();
+            connection = DatabaseConnection.openConnection();
             ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments, customers, users, contacts WHERE appointments.User_ID = users.User_ID AND appointments.Contact_ID = contacts.Contact_ID AND appointments.Customer_ID = customers.Customer_ID ORDER BY Start;");
             while (results.next()) {
                 // converts all appts to user time so it can be displayed in their timezone
@@ -599,6 +606,8 @@ public class AppointmentScreen implements Initializable {
             userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     };
 

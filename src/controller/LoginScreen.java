@@ -94,6 +94,8 @@ public class LoginScreen implements Initializable {
                     this.currentUser = currentUser;
                     AppointmentScreen.passCurrentUserData(this.currentUser);
                     addLoginAttempt(username, true);
+
+                    DatabaseConnection.closeConnection();
                 } catch (SQLException exception) {
                     System.out.println(exception.getMessage());
                 }
