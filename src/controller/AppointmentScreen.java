@@ -38,7 +38,7 @@ public class AppointmentScreen implements Initializable {
     @FXML public TextArea apptDescriptionInput;
     @FXML public TextField apptLocationInput;
     @FXML public TextField apptTypeInput;
-    @FXML public ComboBox apptContactComboBox;
+    @FXML public ComboBox<Contact> apptContactComboBox;
     @FXML public ComboBox apptCustomerComboBox;
     @FXML public DatePicker apptDatePicker;
     @FXML public DatePicker viewAppointmentsDatePicker;
@@ -497,7 +497,14 @@ public class AppointmentScreen implements Initializable {
             apptTitleInput.setText(selectedAppointment.getTitle());
             apptLocationInput.setText(selectedAppointment.getLocation());
             apptDescriptionInput.setText(selectedAppointment.getDescription());
-            apptContactComboBox.getSelectionModel().select(selectedAppointment.getContactId());
+
+            Integer selectedAppointmentContactID = Integer.parseInt(selectedAppointment.getContactId());
+            for (Contact contact : apptContactComboBox.getItems()) {
+                if (selectedAppointmentContactID == contact.getContactID()) {
+                    apptContactComboBox.setValue(contact);
+                    break;
+                }
+            }
             apptCustomerComboBox.getSelectionModel().select(selectedAppointment.getCustomerId());
             apptDatePicker.setValue(selectedAppointment.getDate());
             apptStartTimeComboBox.getSelectionModel().select(selectedAppointment.getStartTime());
