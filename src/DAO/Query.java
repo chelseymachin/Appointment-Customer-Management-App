@@ -492,10 +492,14 @@ public class Query {
         ObservableList<User> usersList = FXCollections.observableArrayList();
 
         try {
-            ResultSet results = connection.createStatement().executeQuery("SELECT User_ID, User_Name from users;");
+            ResultSet results = connection.createStatement().executeQuery("SELECT User_ID, User_Name from users ORDER BY User_ID;");
+
             // loops through results and adds a new User object to list of user objects to populate combo box
             while(results.next()) {
-                usersList.add(new User(results.getInt("User_ID"), results.getString("User_Name")));
+                usersList.add(new User(
+                        results.getInt("User_ID"),
+                        results.getString("User_Name")
+                ));
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());

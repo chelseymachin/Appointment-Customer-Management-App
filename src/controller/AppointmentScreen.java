@@ -41,6 +41,7 @@ public class AppointmentScreen implements Initializable {
     @FXML public TextField apptTypeInput;
     @FXML public ComboBox<Contact> apptContactComboBox;
     @FXML public ComboBox<Customer> apptCustomerComboBox;
+    @FXML public ComboBox<User> apptUserComboBox;
     @FXML public DatePicker apptDatePicker;
     @FXML public DatePicker viewAppointmentsDatePicker;
     @FXML public ComboBox apptStartTimeComboBox;
@@ -62,6 +63,7 @@ public class AppointmentScreen implements Initializable {
     ObservableList<Appointment> appointmentsByMonthObservableList = FXCollections.observableArrayList();
     ObservableList<Appointment> appointmentsByWeekObservableList = FXCollections.observableArrayList();
 
+    ObservableList<User> usersList = FXCollections.observableArrayList();
     ObservableList<Contact> contactsList = FXCollections.observableArrayList();
     ObservableList<Customer> customersList = FXCollections.observableArrayList();
     ObservableList<String> apptTimesList = FXCollections.observableArrayList();
@@ -356,10 +358,10 @@ public class AppointmentScreen implements Initializable {
         LocalDateTime endLocal = null;
         LocalDateTime endEST = null;
         LocalDateTime endUTC = null;
-        Integer userId = currentUser.getUserId();
+        Integer userId = null;
 
         // checks to see if any input areas are empty; if so, gives an error
-        if (apptTypeInput.getText().isEmpty() || apptTitleInput.getText().isEmpty() || apptLocationInput.getText().isEmpty() || apptDescriptionInput.getText().isEmpty() || apptContactComboBox.getSelectionModel().isEmpty() || apptCustomerComboBox.getSelectionModel().isEmpty() || apptDatePicker.getValue() == null || apptStartTimeComboBox.getSelectionModel().isEmpty() || apptEndTimeComboBox.getSelectionModel().isEmpty()) {
+        if (apptTypeInput.getText().isEmpty() || apptTitleInput.getText().isEmpty() || apptLocationInput.getText().isEmpty() || apptDescriptionInput.getText().isEmpty() || apptUserComboBox.getSelectionModel().isEmpty() || apptContactComboBox.getSelectionModel().isEmpty() || apptCustomerComboBox.getSelectionModel().isEmpty() || apptDatePicker.getValue() == null || apptStartTimeComboBox.getSelectionModel().isEmpty() || apptEndTimeComboBox.getSelectionModel().isEmpty()) {
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please enter a value/selection for all fields in order to save!");
             a.showAndWait();
@@ -369,6 +371,7 @@ public class AppointmentScreen implements Initializable {
             apptType = apptTypeInput.getText();
             apptLocation = apptLocationInput.getText();
             apptDescription = apptDescriptionInput.getText();
+            userId = apptUserComboBox.getValue().getUserId();
             apptContact = apptContactComboBox.getValue().getContactID();
             apptCustomer = apptCustomerComboBox.getValue().getCustomerId();
             LocalDate apptDate = apptDatePicker.getValue();
@@ -499,6 +502,14 @@ public class AppointmentScreen implements Initializable {
             apptLocationInput.setText(selectedAppointment.getLocation());
             apptDescriptionInput.setText(selectedAppointment.getDescription());
 
+            Integer selectedAppointmentUserID = Integer.parseInt(selectedAppointment.getUserId());
+            for (User user : apptUserComboBox.getItems()) {
+                if (selectedAppointmentUserID == user.getUserId()) {
+                    apptUserComboBox.setValue(user);
+                    break;
+                }
+            }
+
             Integer selectedAppointmentContactID = Integer.parseInt(selectedAppointment.getContactId());
             for (Contact contact : apptContactComboBox.getItems()) {
                 if (selectedAppointmentContactID == contact.getContactID()) {
@@ -534,6 +545,7 @@ public class AppointmentScreen implements Initializable {
         apptTitleInput.clear();
         apptLocationInput.clear();
         apptDescriptionInput.clear();
+        apptUserComboBox.valueProperty().set(null);
         apptContactComboBox.valueProperty().set(null);
         apptCustomerComboBox.valueProperty().set(null);
         apptDatePicker.setValue(null);
@@ -593,6 +605,10 @@ public class AppointmentScreen implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         apptIdInput.setDisable(true);
+
+        usersList.clear();
+        usersList = Query.getUsersList();
+        apptUserComboBox.setItems(usersList);
 
         /** Prevents observable list from copying on page navs; uses query to generate list of customers and then adds to combo box results */
         customersList.clear();
