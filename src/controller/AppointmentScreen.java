@@ -14,6 +14,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import model.Appointment;
 import model.Contact;
+import model.Customer;
 import model.User;
 
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class AppointmentScreen implements Initializable {
     @FXML public TextField apptLocationInput;
     @FXML public TextField apptTypeInput;
     @FXML public ComboBox<Contact> apptContactComboBox;
-    @FXML public ComboBox apptCustomerComboBox;
+    @FXML public ComboBox<Customer> apptCustomerComboBox;
     @FXML public DatePicker apptDatePicker;
     @FXML public DatePicker viewAppointmentsDatePicker;
     @FXML public ComboBox apptStartTimeComboBox;
@@ -62,7 +63,7 @@ public class AppointmentScreen implements Initializable {
     ObservableList<Appointment> appointmentsByWeekObservableList = FXCollections.observableArrayList();
 
     ObservableList<Contact> contactsList = FXCollections.observableArrayList();
-    ObservableList<String> customersList = FXCollections.observableArrayList();
+    ObservableList<Customer> customersList = FXCollections.observableArrayList();
     ObservableList<String> apptTimesList = FXCollections.observableArrayList();
     Appointment selectedAppointment;
     User currentUser;
@@ -368,8 +369,8 @@ public class AppointmentScreen implements Initializable {
             apptType = apptTypeInput.getText();
             apptLocation = apptLocationInput.getText();
             apptDescription = apptDescriptionInput.getText();
-            apptContact = Integer.parseInt(apptContactComboBox.getValue().toString());
-            apptCustomer = Integer.parseInt(apptCustomerComboBox.getValue().toString());
+            apptContact = apptContactComboBox.getValue().getContactID();
+            apptCustomer = apptCustomerComboBox.getValue().getCustomerId();
             LocalDate apptDate = apptDatePicker.getValue();
             String apptDateString = apptDate.toString();
 
@@ -402,7 +403,7 @@ public class AppointmentScreen implements Initializable {
                     return;
                 }
                 // uses query function to check if appt only overlaps itself; if it overlaps any other appt but itself, gives error and exits
-                else if (Query.doesItOverlapAnyExistingApptButItself(startUTC, endUTC, Integer.parseInt(apptCustomerComboBox.getValue().toString()), Integer.parseInt(apptIdInput.getText()))) {
+                else if (Query.doesItOverlapAnyExistingApptButItself(startUTC, endUTC, apptCustomer, Integer.parseInt(apptIdInput.getText()))) {
                     Alert a = new Alert(Alert.AlertType.ERROR);
                     a.setContentText("Your appointment collides with an appointment that already exists for this customer!  Please choose a new date or time and try again!");
                     a.showAndWait();
@@ -417,7 +418,7 @@ public class AppointmentScreen implements Initializable {
                             apptLocation,
                             apptDescription,
                             apptContact,
-                            Integer.parseInt(apptCustomerComboBox.getValue().toString()),
+                            apptCustomer,
                             startUTC,
                             endUTC,
                             userId
@@ -505,7 +506,15 @@ public class AppointmentScreen implements Initializable {
                     break;
                 }
             }
-            apptCustomerComboBox.getSelectionModel().select(selectedAppointment.getCustomerId());
+
+            Integer selectedAppointmentCustomerID = Integer.parseInt(selectedAppointment.getCustomerId());
+            for (Customer customer : apptCustomerComboBox.getItems()) {
+                if (selectedAppointmentCustomerID == customer.getCustomerId()) {
+                    apptCustomerComboBox.setValue(customer);
+                    break;
+                }
+            }
+
             apptDatePicker.setValue(selectedAppointment.getDate());
             apptStartTimeComboBox.getSelectionModel().select(selectedAppointment.getStartTime());
             apptEndTimeComboBox.getSelectionModel().select(selectedAppointment.getEndTime());

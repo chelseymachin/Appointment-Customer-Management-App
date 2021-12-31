@@ -4,10 +4,7 @@ import controller.AppointmentScreen;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
-import model.Appointment;
-import model.Contact;
-import model.FirstLevelDivision;
-import model.User;
+import model.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -511,16 +508,18 @@ public class Query {
      * Gets all customers' IDs from the customers table in database and returns them as an observable list of Strings
      * @return an observable list of customer IDs to populate a combobox easily with
      */
-    public static ObservableList<String> getCustomersList() {
+    public static ObservableList<Customer> getCustomersList() {
         // creates empty observable list to store results in
-        ObservableList<String> customersList = FXCollections.observableArrayList();
-
+        ObservableList<Customer> customersList = FXCollections.observableArrayList();
 
         try {
             ResultSet results = connection.createStatement().executeQuery("SELECT Customer_ID, Customer_Name from customers;");
             // loops through results and adds a new ID to list of customer IDs for each result
             while(results.next()) {
-                customersList.add(results.getString("Customer_ID"));
+                customersList.add(new Customer(
+                        results.getInt("Customer_ID"),
+                        results.getString("Customer_Name")
+                ));
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
