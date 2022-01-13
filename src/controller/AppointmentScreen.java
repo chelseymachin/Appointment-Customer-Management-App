@@ -508,6 +508,7 @@ public class AppointmentScreen implements Initializable {
             apptDescriptionInput.setText(selectedAppointment.getDescription());
 
             Integer selectedAppointmentUserID = Integer.parseInt(selectedAppointment.getUserId());
+
             for (User user : apptUserComboBox.getItems()) {
                 if (selectedAppointmentUserID == user.getUserId()) {
                     apptUserComboBox.setValue(user);

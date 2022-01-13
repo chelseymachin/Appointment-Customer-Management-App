@@ -13,8 +13,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-import static DAO.DatabaseConnection.connection;
-
 public class Query {
     // these are the "initialization" queries, or queries I expect to run at the very start of the program (checking the login attempt and checking to see if whoever is logging in has upcoming appts)
 
@@ -94,11 +92,14 @@ public class Query {
      * @return true if the appointment data input overlaps an already existing appointment (that's not itself); false if it doesn't overlap any other appointments (but itself)
      */
     public static boolean doesItOverlapAnyExistingApptButItself(LocalDateTime start, LocalDateTime end, Integer customerId, Integer apptId) {
+       Connection connection;
+
         // converts input LDT/date + time to just a LT/time object
         LocalTime startTime = start.toLocalTime();
         LocalTime endTime = end.toLocalTime();
 
         try {
+            connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
             String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
             PreparedStatement preparedSQL = connection.prepareStatement(sql);
@@ -134,6 +135,8 @@ public class Query {
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
         return false;
     }
@@ -148,6 +151,7 @@ public class Query {
      * @throws SQLException throws error if unable to get results from database
      */
     public static boolean doesItOverlapCustomersOtherAppointments(LocalDateTime start, LocalDateTime end, Integer customerId) throws SQLException {
+        Connection connection;
         // converts input LDT/date + time to just a LT/time object
         LocalTime startTime = start.toLocalTime();
         LocalTime endTime = end.toLocalTime();
@@ -157,27 +161,30 @@ public class Query {
 
         // prep SQL statement; then insert variables from function input
         try {
-        String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start) FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
-        PreparedStatement prepared = connection.prepareStatement(sql);
-        prepared.setString(1, startTime.toString());
-        prepared.setString(2, startTime.toString());
-        prepared.setString(3, endTime.toString());
-        prepared.setString(4, endTime.toString());
-        prepared.setString(5, startTime.toString());
-        prepared.setString(6, endTime.toString());
-        prepared.setString(7, startTime.toString());
-        prepared.setString(8, endTime.toString());
-        prepared.execute();
-        ResultSet results = prepared.getResultSet();
+            connection = DatabaseConnection.openConnection();
+            String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start) FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setString(1, startTime.toString());
+            prepared.setString(2, startTime.toString());
+            prepared.setString(3, endTime.toString());
+            prepared.setString(4, endTime.toString());
+            prepared.setString(5, startTime.toString());
+            prepared.setString(6, endTime.toString());
+            prepared.setString(7, startTime.toString());
+            prepared.setString(8, endTime.toString());
+            prepared.execute();
+            ResultSet results = prepared.getResultSet();
 
-        // loops through all appointments that overlap to see if any of them are for the same customer on the same date; if so, returns true
-        while (results.next()) {
-                if ((results.getInt("Customer_ID") == customerId) & (results.getString("DATE(Start)") == start.toLocalDate().toString())) {
-                    itOverlaps = true;
-                }
+            // loops through all appointments that overlap to see if any of them are for the same customer on the same date; if so, returns true
+            while (results.next()) {
+                    if ((results.getInt("Customer_ID") == customerId) & (results.getString("DATE(Start)") == start.toLocalDate().toString())) {
+                        itOverlaps = true;
+                    }
             }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+                System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
         return itOverlaps;
     }
@@ -189,10 +196,12 @@ public class Query {
      * @return true if customer has open appointments; false if no open appointments in database currently
      */
     public static Boolean checkForCustomerAppointments(String customerId) {
+        Connection connection;
         // variable set to false by default
         Boolean hasAppointments = false;
 
         try {
+            connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
             String sql = "SELECT Appointment_ID FROM appointments WHERE Customer_ID=?;";
             PreparedStatement prepared = connection.prepareStatement(sql);
@@ -204,6 +213,8 @@ public class Query {
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
         return hasAppointments;
     }
@@ -221,7 +232,9 @@ public class Query {
             a.setContentText("You cannot delete a customer that has open appointments!  Please delete this customer's appointments first before trying to delete the customer again.");
             a.showAndWait();
         } else {
+            Connection connection;
             try {
+                connection = DatabaseConnection.openConnection();
                 // prep SQL statement; then insert variables from function input
                 String sql = "DELETE FROM customers WHERE Customer_ID=?;";
                 PreparedStatement prepared = connection.prepareStatement(sql);
@@ -229,6 +242,8 @@ public class Query {
                 prepared.execute();
             } catch (SQLException exception) {
                 System.out.println(exception.getMessage());
+            } finally {
+                DatabaseConnection.closeConnection();
             }
         }
     }
@@ -245,7 +260,9 @@ public class Query {
      * @param userId the integer of the id of the currently logged in user
      */
     public static void updateCustomer(String customerId, String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) {
+        Connection connection;
         try {
+            connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
             String sql = "UPDATE customers SET Customer_Name=?, Address=?, Postal_Code=?, Phone=?, Last_Update=NOW(), Last_Updated_By=?, Division_ID=? WHERE Customer_ID=?;";
             PreparedStatement prepared = connection.prepareStatement(sql);
@@ -259,6 +276,8 @@ public class Query {
             prepared.execute();
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     }
 
@@ -274,7 +293,9 @@ public class Query {
      * @throws SQLException throws error if unable to add record to database
      */
     public static void addCustomer(String name, String address, String zip, String phone, Integer firstLevelDivisionId, Integer userId) throws SQLException {
+        Connection connection;
         try {
+            connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
             String sql = "INSERT INTO customers (Customer_Name, Address, Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) VALUES (?, ?, ?, ?, NOW(), ?, NOW(), ?, ?);";
             PreparedStatement prepared = connection.prepareStatement(sql);
@@ -288,6 +309,8 @@ public class Query {
             prepared.execute();
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     }
 
@@ -300,7 +323,9 @@ public class Query {
      * @param apptType appointment type as a string; for more info in functionality
      */
     public static void deleteAppt(String apptId, String apptType) {
+        Connection connection;
         try {
+            connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
             String sql = "DELETE FROM appointments WHERE Appointment_ID=?;";
             PreparedStatement prepared = connection.prepareStatement(sql);
@@ -314,6 +339,8 @@ public class Query {
             alert.showAndWait();
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     }
 
@@ -332,7 +359,9 @@ public class Query {
      * @param userId the integer of the id of the currently logged in user
      */
     public static void updateAppointment(String appointmentId, String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) {
+        Connection connection;
         try {
+            connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
             String sql = "UPDATE appointments SET Title=?, Description=?, Location=?, Type=?, Start=?, End=?, Last_Update=NOW(), Last_Updated_By=?, Customer_ID=?, Contact_ID=? WHERE Appointment_ID=?;";
             PreparedStatement prepared = connection.prepareStatement(sql);
@@ -349,6 +378,8 @@ public class Query {
             prepared.execute();
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     }
 
@@ -367,7 +398,9 @@ public class Query {
      * @throws SQLException throws error if unable to add record to the database
      */
     public static void addAppointment(String title, String type, String location, String description, Integer contactId, Integer customerId, LocalDateTime apptStart, LocalDateTime apptEnd, Integer userId) throws SQLException {
+        Connection connection;
         try {
+            connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
             String sql = "INSERT INTO appointments (Title, Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, NOW(), ?, ?, ?, ?);";
             PreparedStatement prepared = connection.prepareStatement(sql);
@@ -385,6 +418,8 @@ public class Query {
             prepared.execute();
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     }
 
@@ -394,19 +429,24 @@ public class Query {
      * helper function for easy combo box population
      * @return a list of first level division names that exist in the first_level_divisions table of the database
      */
-    public static ObservableList<String> getFirstLevelDivisionsList() {
+    public static ObservableList<FirstLevelDivision> getFirstLevelDivisionsList() {
         Connection connection;
         // empty string list to store the results
-        ObservableList<String> firstLevelDivisionsList = FXCollections.observableArrayList();
+        ObservableList<FirstLevelDivision> firstLevelDivisionsList = FXCollections.observableArrayList();
 
         try {
             connection = DatabaseConnection.openConnection();
             // queries the database to return the name of the division for each record in database list
-            ResultSet results = connection.createStatement().executeQuery("SELECT Division FROM first_level_divisions;");
+            ResultSet results = connection.createStatement().executeQuery("SELECT Division, Division_ID, Country_ID FROM first_level_divisions;");
 
             // loops through resultset and adds a new string to the list for each division name (with the division name)
             while(results.next()) {
-                firstLevelDivisionsList.add(results.getString("Division"));
+                FirstLevelDivision newFLD = new FirstLevelDivision(
+                        results.getInt("Division_ID"),
+                        results.getInt("Country_ID"),
+                        results.getString("Division")
+                );
+                firstLevelDivisionsList.add(newFLD);
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
@@ -420,19 +460,23 @@ public class Query {
      * helper function for easy combo box population
      * @return a list of country names that exist in the countries table of the database
      */
-    public static ObservableList<String> getCountriesList() {
+    public static ObservableList<Country> getCountriesList() {
         Connection connection;
         // empty string list to store the results
-        ObservableList<String> countriesList = FXCollections.observableArrayList();
+        ObservableList<Country> countriesList = FXCollections.observableArrayList();
 
         try {
             connection = DatabaseConnection.openConnection();
             // queries the database to return the name of the country for each record in database list
-            ResultSet results = connection.createStatement().executeQuery("SELECT Country from countries;");
+            ResultSet results = connection.createStatement().executeQuery("SELECT Country, Country_ID from countries;");
 
             // loops through resultset and adds a new string to the list for each country name (with the country name)
             while(results.next()) {
-                countriesList.add(results.getString("Country"));
+                Country newCountry = new Country(
+                        results.getInt("Country_ID"),
+                        results.getString("Country")
+                );
+                countriesList.add(newCountry);
             }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
@@ -449,10 +493,12 @@ public class Query {
      * @throws SQLException throws error if unable to get results from database
      */
     public static ObservableList<FirstLevelDivision> getFirstLevelDivisionsByCountry(String countryName) throws SQLException {
+        Connection connection;
         // empty list to store results
         ObservableList<FirstLevelDivision> divisions = FXCollections.observableArrayList();
 
         try {
+            connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
             String sql = "SELECT Division_ID, first_level_divisions.Country_ID, Division FROM first_level_divisions INNER JOIN countries ON first_level_divisions.Country_ID = countries.Country_ID WHERE countries.Country=?;";
             PreparedStatement prepared = connection.prepareStatement(sql);
@@ -475,6 +521,8 @@ public class Query {
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
             return null;
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     }
 
@@ -485,7 +533,9 @@ public class Query {
      * @throws SQLException throws error if unable to get results from database
      */
     public static Integer getFirstLevelDivisionId(String firstLevelDivisionName) throws SQLException {
+        Connection connection;
         try {
+            connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
             String sql = "SELECT Division_ID, Division FROM first_level_divisions WHERE Division=?";
             PreparedStatement prepared = connection.prepareStatement(sql);
@@ -497,6 +547,8 @@ public class Query {
             return results.getInt("Division_ID");
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
         }
         return null;
     }
