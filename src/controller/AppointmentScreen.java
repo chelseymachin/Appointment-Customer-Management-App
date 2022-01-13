@@ -70,7 +70,7 @@ public class AppointmentScreen implements Initializable {
     ObservableList<Customer> customersList = FXCollections.observableArrayList();
     ObservableList<String> apptTimesList = FXCollections.observableArrayList();
     Appointment selectedAppointment;
-    User currentUser;
+    public static User currentUser;
 
     /**
      * used to pass the user data about the user currently logged in from the login screen

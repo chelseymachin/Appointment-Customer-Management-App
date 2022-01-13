@@ -1,9 +1,9 @@
 package model;
 
 public class User {
-    private static Integer userId;
-    private static String username;
-    private static boolean isLoggedIn;
+    private Integer userId;
+    private String username;
+    private boolean isLoggedIn;
 
 
     public User(String userId, String username, boolean isLoggedIn) {
@@ -17,7 +17,7 @@ public class User {
         this.username = username;
     }
 
-    public static String getUsername() {
+    public String getUsername() {
         return username;
     }
 
@@ -25,15 +25,15 @@ public class User {
         this.username = username;
     }
 
-    public static boolean isIsLoggedIn() {
+    public boolean isIsLoggedIn() {
         return isLoggedIn;
     }
 
-    public static void setIsLoggedIn(boolean isLoggedIn) {
-        User.isLoggedIn = isLoggedIn;
+    public void setIsLoggedIn(boolean isLoggedIn) {
+        this.isLoggedIn = isLoggedIn;
     }
 
-    public static Integer getUserId() {
+    public Integer getUserId() {
         return userId;
     }
 

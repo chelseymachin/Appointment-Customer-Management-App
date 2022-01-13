@@ -35,7 +35,7 @@ public class LoginScreen implements Initializable {
     @FXML private TextField passwordTextField;
     @FXML private Label locationLabel;
     @FXML private AnchorPane loginScreenPane;
-    User currentUser;
+    public static User currentUser;
     Stage stage;
 
     // button handler functions
@@ -81,7 +81,7 @@ public class LoginScreen implements Initializable {
                 try {
                     connection = DatabaseConnection.openConnection();
 
-                    String sql = "SELECT User_ID, User_Name From USERS where User_Name=?;";
+                    String sql = "SELECT User_ID, User_Name From users where User_Name=?;";
                     PreparedStatement prepared = connection.prepareStatement(sql);
                     prepared.setString(1, username);
                     prepared.execute();

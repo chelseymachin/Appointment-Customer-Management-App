@@ -1,6 +1,7 @@
 package DAO;
 
 import controller.AppointmentScreen;
+import controller.LoginScreen;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
@@ -25,8 +26,9 @@ public class Query {
      * @return true if matching record exists in database; false if not
      */
     public static boolean loginAttempt(String username, String password) {
-        Connection connection;
+
         try{
+            Connection connection;
             // open connection to DB
             connection = DatabaseConnection.openConnection();
 
@@ -58,7 +60,7 @@ public class Query {
             try {
                 connection = DatabaseConnection.openConnection();
                 // create result set from query attempt with currently logged in user as input
-                ResultSet apptResults = connection.createStatement().executeQuery(String.format("SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID='%s' AND a.Start BETWEEN '%s' AND '%s'", User.getUserId(), LocalDateTime.now(ZoneId.of("UTC")), LocalDateTime.now(ZoneId.of("UTC")).plusMinutes(15)));
+                ResultSet apptResults = connection.createStatement().executeQuery(String.format("SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID='%s' AND a.Start BETWEEN '%s' AND '%s'", LoginScreen.currentUser.getUserId(), LocalDateTime.now(ZoneId.of("UTC")), LocalDateTime.now(ZoneId.of("UTC")).plusMinutes(15)));
 
                 // Loops through appointment results from database and alerts informing user of customer name, local time of appointment, and location
                 while (apptResults.next()) {
@@ -506,15 +508,20 @@ public class Query {
 
         try {
             connection = DatabaseConnection.openConnection();
-            ResultSet results = connection.createStatement().executeQuery("SELECT User_ID, User_Name from users ORDER BY User_ID;");
+            ResultSet results = connection.createStatement().executeQuery("SELECT User_ID, User_Name from users;");
+            results.next();
+            usersList.add(new User(
+                    results.getInt("User_ID"),
+                    results.getString("User_Name")
+            ));
+            System.out.println(results.getString("User_Name"));
+            results.next();
+            usersList.add(new User(
+                    results.getInt("User_ID"),
+                    results.getString("User_Name")
+            ));
+            System.out.println(results.getString("User_Name"));
 
-            // loops through results and adds a new User object to list of user objects to populate combo box
-            while(results.next()) {
-                usersList.add(new User(
-                        results.getInt("User_ID"),
-                        results.getString("User_Name")
-                ));
-            }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
         } finally {
