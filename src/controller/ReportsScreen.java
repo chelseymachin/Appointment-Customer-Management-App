@@ -1,5 +1,6 @@
 package controller;
 
+import DAO.DatabaseConnection;
 import DAO.Query;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -13,6 +14,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,8 +22,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
 import java.util.ResourceBundle;
-
-import static DAO.DatabaseConnection.connection;
 
 public class ReportsScreen implements Initializable {
     public TextArea reportTextArea;
@@ -90,9 +90,11 @@ public class ReportsScreen implements Initializable {
      * @throws SQLException throws error if unable to get results from database
      */
     public String getContactSchedules(String contactId) throws SQLException {
+        Connection connection;
         reportTextArea.clear();
         contactIdsComboBox.getSelectionModel().clearSelection();
         try {
+            connection = DatabaseConnection.openConnection();
             StringBuilder reportText = new StringBuilder();
             reportText.append("Contact ID: " + contactId + " - Schedule\n...................................................................................................................................................................................................\n" +
                     "Date        |         Start    |    End   |   Appt ID   |    Title     |      Type      |        Description     |     Customer ID\n.......................................................................................................................................................................................................\n");
@@ -120,6 +122,8 @@ public class ReportsScreen implements Initializable {
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
             return "Oops! Something went wrong!";
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     }
 
@@ -129,9 +133,11 @@ public class ReportsScreen implements Initializable {
      * @return String based report in the text window
      */
     public String getApptsByCustomerId(String customerId) {
+        Connection connection;
         reportTextArea.clear();
         customerIdsComboBox.getSelectionModel().clearSelection();
         try {
+            connection = DatabaseConnection.openConnection();
             StringBuilder reportText = new StringBuilder();
             reportText.append("Customer ID: " + customerId + " - Schedule\n...................................................................................................................................................................................................\n" +
                     "Date        |         Start    |    End   |   Appt ID   |    Title     |      Type      |        Description     |     Contact ID\n.......................................................................................................................................................................................................\n");
@@ -160,6 +166,8 @@ public class ReportsScreen implements Initializable {
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
             return "Oops! Something went wrong!";
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     }
 
@@ -179,11 +187,13 @@ public class ReportsScreen implements Initializable {
      * @throws SQLException throws error if unable to get results from database
      */
     public String getApptsByTypeMonth(String month) throws SQLException {
+        Connection connection;
         reportTextArea.clear();
         monthsComboBox.valueProperty().set(null);
         monthsComboBox.setPromptText("Month...");
 
         try {
+            connection = DatabaseConnection.openConnection();
             StringBuilder reportText = new StringBuilder();
             reportText.append("Number of appointments by type in " + month + "\n" + "\n");
             reportText.append("# of Appts       |        Type \n...........................................................................................................\n");
@@ -205,6 +215,8 @@ public class ReportsScreen implements Initializable {
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
             return "Oops! Something went wrong!";
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     }
 

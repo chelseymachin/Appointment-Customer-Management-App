@@ -90,7 +90,6 @@ public class LoginScreen implements Initializable {
 
                     // creates currentUser object with data of currently logged in user
                     User currentUser = new User(getUserInfo.getString("User_ID"), getUserInfo.getString("User_Name"), true);
-                    System.out.println("Current userId: " + currentUser.getUserId() + " userName: " + currentUser.getUsername());
                     this.currentUser = currentUser;
                     AppointmentScreen.passCurrentUserData(this.currentUser);
                     addLoginAttempt(username, true);

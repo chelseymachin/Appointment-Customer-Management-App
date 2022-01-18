@@ -79,6 +79,7 @@ public class CustomersScreen implements Initializable {
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please enter a value/selection for all fields in order to save!");
             a.showAndWait();
+            return;
         } else {
             customerName = customerNameInput.getText();
             address = customerAddressInput.getText();

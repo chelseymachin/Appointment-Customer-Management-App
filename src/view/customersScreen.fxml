@@ -61,8 +61,8 @@
             <Font name="System Bold" size="14.0" />
          </font>
       </Label>
-      <ComboBox fx:id="stateComboBox" layoutX="250.0" layoutY="118.0" prefHeight="25.0" prefWidth="95.0" promptText="State/Province" style="-fx-background-color: #ff6b6b;" />
-      <ComboBox fx:id="countryComboBox" layoutX="249.0" layoutY="149.0" onAction="#filterFLDByCountry" prefHeight="25.0" prefWidth="135.0" promptText="Country" style="-fx-background-color: #ff6b6b;" />
+      <ComboBox fx:id="stateComboBox" layoutX="250.0" layoutY="156.0" prefHeight="25.0" prefWidth="135.0" promptText="State/Province" style="-fx-background-color: #ff6b6b;" />
+      <ComboBox fx:id="countryComboBox" layoutX="249.0" layoutY="121.0" onAction="#filterFLDByCountry" prefHeight="25.0" prefWidth="118.0" promptText="Country" style="-fx-background-color: #ff6b6b;" />
       <Button fx:id="backButton" layoutX="5.0" layoutY="472.0" mnemonicParsing="false" onAction="#backButtonHandler" prefHeight="8.0" prefWidth="61.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Back">
          <font>
             <Font size="18.0" />

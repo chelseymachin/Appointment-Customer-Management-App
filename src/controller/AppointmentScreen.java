@@ -20,10 +20,7 @@ import model.User;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -31,8 +28,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.ResourceBundle;
-
-import static DAO.DatabaseConnection.connection;
 
 public class AppointmentScreen implements Initializable {
     @FXML public Button editApptButton;
@@ -68,7 +63,7 @@ public class AppointmentScreen implements Initializable {
     ObservableList<User> usersList = FXCollections.observableArrayList();
     ObservableList<Contact> contactsList = FXCollections.observableArrayList();
     ObservableList<Customer> customersList = FXCollections.observableArrayList();
-    ObservableList<String> apptTimesList = FXCollections.observableArrayList();
+    ObservableList<LocalTime> apptTimesList = FXCollections.observableArrayList();
     Appointment selectedAppointment;
     public static User currentUser;
 
@@ -170,15 +165,16 @@ public class AppointmentScreen implements Initializable {
         } else {
             // gets date and year from datepicker element
             LocalDate selectedDate = viewAppointmentsDatePicker.getValue();
-
+            Connection connection;
             try {
+                connection = DatabaseConnection.openConnection();
                 // clears the current observable list set for appointments by week view (just in case a previous has been selected)
                 appointmentsByWeekObservableList.clear();
 
                 // prep SQL statement and insert string input from week selection
-                String sql = "SELECT * FROM appointments WHERE YEARWEEK(Start)=YEARWEEK(?);";
+                String sql = "SELECT *, DATE(Start) AS StartDate FROM appointments WHERE YEARWEEK(Start)=YEARWEEK(?);";
                 PreparedStatement prepared = connection.prepareStatement(sql);
-                prepared.setString(1, String.valueOf(selectedDate));
+                prepared.setDate(1, Date.valueOf(selectedDate));
                 prepared.execute();
                 ResultSet results = prepared.getResultSet();
 
@@ -189,17 +185,18 @@ public class AppointmentScreen implements Initializable {
                     LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
 
                     appointmentsByWeekObservableList.add(new Appointment(
-                            results.getString("Appointment_ID"),
-                            results.getString("Customer_ID"),
+                            results.getInt("Appointment_ID"),
+                            results.getInt("Customer_ID"),
                             results.getString("Title"),
                             results.getString("Description"),
                             results.getString("Location"),
                             results.getString("Type"),
-                            apptStartConvertedToUserTime.toString(),
-                            apptStartConvertedToUserTime.toString(),
-                            apptEndConvertedToUserTime.toString(),
-                            results.getString("User_ID"),
-                            results.getString("Contact_ID")));
+                            results.getInt("User_ID"),
+                            results.getInt("Contact_ID"),
+                            results.getDate("StartDate").toLocalDate(),
+                            results.getTime("Start").toLocalTime(),
+                            results.getTime("End").toLocalTime()
+                    ));
                 }
                 apptsTable.setItems(appointmentsByWeekObservableList);
 
@@ -216,6 +213,8 @@ public class AppointmentScreen implements Initializable {
                 userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
             } catch(SQLException exception) {
                 System.out.println(exception.getMessage());
+            } finally {
+                DatabaseConnection.closeConnection();
             }
         }
     }
@@ -239,7 +238,7 @@ public class AppointmentScreen implements Initializable {
                 appointmentsByMonthObservableList.clear();
 
                 // prep SQL statement and insert string input from week selection
-                String sql = "SELECT * FROM appointments WHERE MONTHNAME(Start)=MONTHNAME(?);";
+                String sql = "SELECT *, DATE(Start) AS StartDate FROM appointments WHERE MONTHNAME(Start)=MONTHNAME(?);";
                 PreparedStatement prepared = connection.prepareStatement(sql);
                 prepared.setString(1, String.valueOf(selectedDate));
                 prepared.execute();
@@ -252,17 +251,18 @@ public class AppointmentScreen implements Initializable {
                     LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
 
                     appointmentsByMonthObservableList.add(new Appointment(
-                            results.getString("Appointment_ID"),
-                            results.getString("Customer_ID"),
+                            results.getInt("Appointment_ID"),
+                            results.getInt("Customer_ID"),
                             results.getString("Title"),
                             results.getString("Description"),
                             results.getString("Location"),
                             results.getString("Type"),
-                            apptStartConvertedToUserTime.toString(),
-                            apptStartConvertedToUserTime.toString(),
-                            apptEndConvertedToUserTime.toString(),
-                            results.getString("User_ID"),
-                            results.getString("Contact_ID")));
+                            results.getInt("User_ID"),
+                            results.getInt("Contact_ID"),
+                            results.getDate("StartDate").toLocalDate(),
+                            results.getTime("Start").toLocalTime(),
+                            results.getTime("End").toLocalTime()
+                            ));
                 }
                 apptsTable.setItems(appointmentsByMonthObservableList);
 
@@ -357,10 +357,10 @@ public class AppointmentScreen implements Initializable {
         String apptDescription = null;
         Integer apptContact = null;
         Integer apptCustomer = null;
-        LocalDateTime startLocal = null;
+        LocalDateTime startTime = null;
         LocalDateTime startEST = null;
         LocalDateTime startUTC = null;
-        LocalDateTime endLocal = null;
+        LocalDateTime endTime = null;
         LocalDateTime endEST = null;
         LocalDateTime endUTC = null;
         Integer userId = null;
@@ -382,17 +382,19 @@ public class AppointmentScreen implements Initializable {
             LocalDate apptDate = apptDatePicker.getValue();
             String apptDateString = apptDate.toString();
 
-            // gets appt start date from combobox as string, converts it to LocalDateTime object, then converts it to EST and UTC to use for more validation below
+            // gets appt start time as LocalTime object from combobox, converts it to LocalDateTime object, then converts it to EST and UTC to use for more validation below
             String apptStart = apptStartTimeComboBox.getValue().toString();
-            startLocal = stringToLDTConverter(apptStart, apptDateString);
-            startEST = usersLDTToEST(startLocal);
-            startUTC = usersLDTToUTC(startLocal);
+            startTime = stringToLDTConverter(apptStart, apptDateString);
+            startEST = Query.convertFromUserTimeZoneToEST(startTime);
+            startUTC = Query.convertFromUserTimeZoneToUTC(startTime);
 
-            // gets appt end date from combobox as string, converts it to LocalDateTime object, then converts it to EST and UTC to use for more validation below
+
+            // gets appt end time as LocalTime object from combobox, converts it to LocalDateTime object, then converts it to EST and UTC to use for more validation below
             String apptEnd = apptEndTimeComboBox.getValue().toString();
-            endLocal = stringToLDTConverter(apptEnd, apptDateString);
-            endEST = usersLDTToEST(endLocal);
-            endUTC = usersLDTToUTC(endLocal);
+            endTime = stringToLDTConverter(apptEnd, apptDateString);
+            endEST = Query.convertFromUserTimeZoneToEST(endTime);
+            endUTC = Query.convertFromUserTimeZoneToUTC(endTime);
+
 
             // if appt ID is filled in, the user is attempting to edit an existing appt; so we will act accordingly below
             if (!apptIdInput.getText().isEmpty()) {
@@ -404,7 +406,7 @@ public class AppointmentScreen implements Initializable {
                     return;
                 }
                 // if end of appt is before the start of the appt, give error and exit
-                else if (endLocal.isBefore(startLocal)) {
+                else if (endTime.isBefore(startTime)) {
                     Alert a = new Alert(Alert.AlertType.ERROR);
                     a.setContentText("The end time you've selected is before your start time!  Better check that for accuracy, partner!");
                     a.showAndWait();
@@ -451,7 +453,7 @@ public class AppointmentScreen implements Initializable {
                         return;
                     }
                     // make sure appt doesn't end before it starts
-                    else if (endLocal.isBefore(startLocal)) {
+                    else if (endTime.isBefore(startTime)) {
                         Alert a = new Alert(Alert.AlertType.ERROR);
                         a.setContentText("The end time you've selected is before your start time!  Better check that for accuracy, partner!");
                         a.showAndWait();
@@ -501,13 +503,13 @@ public class AppointmentScreen implements Initializable {
 
         // checks to make sure that an appointment has been selected from the appointments table
         if (selectedAppointment instanceof Appointment) {
-            apptIdInput.setText(selectedAppointment.getAppointmentId());
+            apptIdInput.setText(selectedAppointment.getAppointmentId().toString());
             apptTypeInput.setText(selectedAppointment.getType());
             apptTitleInput.setText(selectedAppointment.getTitle());
             apptLocationInput.setText(selectedAppointment.getLocation());
             apptDescriptionInput.setText(selectedAppointment.getDescription());
 
-            Integer selectedAppointmentUserID = Integer.parseInt(selectedAppointment.getUserId());
+            Integer selectedAppointmentUserID = selectedAppointment.getUserId();
 
             for (User user : apptUserComboBox.getItems()) {
                 if (selectedAppointmentUserID == user.getUserId()) {
@@ -516,7 +518,7 @@ public class AppointmentScreen implements Initializable {
                 }
             }
 
-            Integer selectedAppointmentContactID = Integer.parseInt(selectedAppointment.getContactId());
+            Integer selectedAppointmentContactID = selectedAppointment.getContactId();
             for (Contact contact : apptContactComboBox.getItems()) {
                 if (selectedAppointmentContactID == contact.getContactID()) {
                     apptContactComboBox.setValue(contact);
@@ -524,7 +526,7 @@ public class AppointmentScreen implements Initializable {
                 }
             }
 
-            Integer selectedAppointmentCustomerID = Integer.parseInt(selectedAppointment.getCustomerId());
+            Integer selectedAppointmentCustomerID = selectedAppointment.getCustomerId();
             for (Customer customer : apptCustomerComboBox.getItems()) {
                 if (selectedAppointmentCustomerID == customer.getCustomerId()) {
                     apptCustomerComboBox.setValue(customer);
@@ -568,52 +570,28 @@ public class AppointmentScreen implements Initializable {
 
     /** lambda function provides a functional interface for me to quickly view all appointments on screen initialization; putting this into a lambda function allows me to execute it as a runnable function on demand, which is handier than putting all of it in my initialization manually.  It also means that I can call it from other places on demand as well! */
     Runnable viewAllAppts = () -> {
-        Connection connection;
         viewAppointmentsDatePicker.setValue(null);
-        try {
-            appointmentsObservableList.clear();
-            connection = DatabaseConnection.openConnection();
-            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments, customers, users, contacts WHERE appointments.User_ID = users.User_ID AND appointments.Contact_ID = contacts.Contact_ID AND appointments.Customer_ID = customers.Customer_ID ORDER BY Start;");
-            while (results.next()) {
-                // converts all appts to user time so it can be displayed in their timezone
-                LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
-                LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
-
-                appointmentsObservableList.add(new Appointment(
-                        results.getString("Appointment_ID"),
-                        results.getString("Customer_ID"),
-                        results.getString("Title"),
-                        results.getString("Description"),
-                        results.getString("Location"),
-                        results.getString("Type"),
-                        apptStartConvertedToUserTime.toString(),
-                        apptStartConvertedToUserTime.toString(),
-                        apptEndConvertedToUserTime.toString(),
-                        results.getString("User_ID"),
-                        results.getString("Contact_ID")));
-            }
-            apptsTable.setItems(appointmentsObservableList);
-
-            apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
-            customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
-            titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-            descriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
-            locationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
-            contactCol.setCellValueFactory(new PropertyValueFactory<>("contactId"));
-            typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-            dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
-            startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
-            endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
-            userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
-        } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
-        } finally {
-            DatabaseConnection.closeConnection();
-        }
+        appointmentsObservableList.clear();
+        appointmentsObservableList = Query.getAllAppointments();
+        apptsTable.getItems().clear();
+        apptsTable.setItems(appointmentsObservableList);
     };
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+
+        apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
+        customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+        titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
+        descriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
+        locationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
+        contactCol.setCellValueFactory(new PropertyValueFactory<>("contactId"));
+        typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+        dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
+        startTimeCol.setCellValueFactory(new PropertyValueFactory<>("startTime"));
+        endTimeCol.setCellValueFactory(new PropertyValueFactory<>("endTime"));
+        userIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
+
         apptIdInput.setDisable(true);
 
         usersList.clear();
@@ -631,8 +609,7 @@ public class AppointmentScreen implements Initializable {
         apptContactComboBox.setItems(contactsList);
 
         apptTimesList.clear();
-        apptTimesList.setAll(Query.getApptTimes());
-
+        apptTimesList = Query.getApptTimes();
         apptStartTimeComboBox.setItems(apptTimesList);
         apptEndTimeComboBox.setItems(apptTimesList);
 
@@ -645,7 +622,8 @@ public class AppointmentScreen implements Initializable {
                 setDisable(empty || selectedDate.compareTo(currentDate) < 0);
             }
         });
-        apptsTable.getItems().clear();
-        viewAllAppts.run();
+
+        this.viewAllApptsRun();
+        Query.checkForUpcomingAppts();
     }
 }

@@ -1,6 +1,5 @@
 package DAO;
 
-import controller.AppointmentScreen;
 import controller.LoginScreen;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -8,9 +7,7 @@ import javafx.scene.control.Alert;
 import model.*;
 
 import java.sql.*;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 
 public class Query {
@@ -322,14 +319,14 @@ public class Query {
      * @param apptId appointment ID as string
      * @param apptType appointment type as a string; for more info in functionality
      */
-    public static void deleteAppt(String apptId, String apptType) {
+    public static void deleteAppt(Integer apptId, String apptType) {
         Connection connection;
         try {
             connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
             String sql = "DELETE FROM appointments WHERE Appointment_ID=?;";
             PreparedStatement prepared = connection.prepareStatement(sql);
-            prepared.setString(1, apptId);
+            prepared.setInt(1, apptId);
             prepared.execute();
 
             // produces alert that confirms the deletion of the appointment given
@@ -553,6 +550,25 @@ public class Query {
         return null;
     }
 
+    public static String getFirstLevelDivisionName(Integer firstLevelDivisionId) {
+        Connection connection;
+        try {
+            connection = DatabaseConnection.openConnection();
+            String sql = "SELECT Division FROM divisions WHERE Division_ID=?";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setInt(1, firstLevelDivisionId);
+            prepared.execute();
+
+            ResultSet results = prepared.getResultSet();
+            return results.getString("Division");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
+        }
+        return null;
+    }
+
 
     public static ObservableList<User> getUsersList() {
         ObservableList<User> usersList = FXCollections.observableArrayList();
@@ -566,14 +582,12 @@ public class Query {
                     results.getInt("User_ID"),
                     results.getString("User_Name")
             ));
-            System.out.println(results.getString("User_Name"));
-            results.next();
-            usersList.add(new User(
-                    results.getInt("User_ID"),
-                    results.getString("User_Name")
-            ));
-            System.out.println(results.getString("User_Name"));
-
+            while(results.next()) {
+                usersList.add(new User(
+                        results.getInt("User_ID"),
+                        results.getString("User_Name")
+                ));
+            }
         } catch (SQLException exception) {
             System.out.println(exception.getMessage());
         } finally {
@@ -610,6 +624,96 @@ public class Query {
         return customersList;
     }
 
+    public static String getCountryNameByDivisionId(Integer divisionId) {
+        Connection connection;
+        try {
+            connection = DatabaseConnection.openConnection();
+            String sql = "SELECT Division_ID, first_level_divisions.Country_ID, Country FROM first_level_divisions INNER JOIN countries ON first_level_divisions.Country_ID = countries.Country_ID WHERE Division_ID=?";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setInt(1, divisionId);
+            prepared.execute();
+            ResultSet result = prepared.getResultSet();
+            return result.getString("Country");
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
+        }
+        return null;
+    }
+
+    public static Customer getCustomerById(Integer customerId) {
+        Connection connection;
+        try {
+            connection = DatabaseConnection.openConnection();
+            String sql = "SELECT Customer_Name, Address, Division_ID, Postal_Code, Phone FROM customers WHERE Customer_ID=?";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setInt(1, customerId);
+            prepared.execute();
+            ResultSet result = prepared.getResultSet();
+            Customer selectedCustomer = new Customer(
+                    customerId,
+                    result.getString("Customer_Name"),
+                    result.getString("Address"),
+                    getFirstLevelDivisionName(result.getInt("Division_ID")),
+                    result.getInt("Division_ID"),
+                    result.getString("Postal_Code"),
+                    getCountryNameByDivisionId(result.getInt("Division_ID")),
+                    result.getString("Phone")
+            );
+            return selectedCustomer;
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
+        }
+        return null;
+    }
+
+    public static User getUserById(Integer userId) {
+        Connection connection;
+        try {
+            connection = DatabaseConnection.openConnection();
+            String sql = "SELECT User_Name FROM users WHERE User_ID=?";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setInt(1, userId);
+            prepared.execute();
+            ResultSet result = prepared.getResultSet();
+            User selectedUser = new User(
+                    userId,
+                    result.getString("User_Name")
+            );
+            return selectedUser;
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
+        }
+        return null;
+    }
+
+    public static Contact getContactById(Integer contactId) {
+        Connection connection;
+        try {
+            connection = DatabaseConnection.openConnection();
+            String sql = "SELECT Contact_Name FROM contacts WHERE Contact_ID=?";
+            PreparedStatement prepared = connection.prepareStatement(sql);
+            prepared.setInt(1, contactId);
+            prepared.execute();
+            ResultSet result = prepared.getResultSet();
+            Contact selectedContact = new Contact(
+                    contactId,
+                    result.getString("Contact_Name")
+            );
+            return selectedContact;
+        } catch (SQLException exception) {
+            System.out.println(exception.getMessage());
+        } finally {
+            DatabaseConnection.closeConnection();
+        }
+        return null;
+    }
+
     /**
      * Gets all contacts' IDs from the contacts table in database and returns them as an observable list of Strings
      * @return an observable list of contact IDs to populate a combobox easily with
@@ -641,29 +745,29 @@ public class Query {
      * Generates a list of all appointment times available and returns it as an obserable list of Strings
      * @return an observable list of appointment times as strings to populate a combobox easily with
      */
-    public static ObservableList<String> getApptTimes() {
+    public static ObservableList<LocalTime> getApptTimes() {
         // an empty list to store the results in
-        ObservableList<String> apptTimes = FXCollections.observableArrayList();
+        ObservableList<LocalTime> apptTimes = FXCollections.observableArrayList();
 
         // loops through 24 hour time period to create appointment times
         for (int i = 1; i < 24; i++ ) {
             if (i < 10) {
-                String newAppt1 = LocalTime.parse("0" + i + ":00").toString();
+                LocalTime newAppt1 = LocalTime.parse("0" + i + ":00");
                 apptTimes.add(newAppt1);
-                String newAppt2 = LocalTime.parse("0" + i + ":15").toString();
+                LocalTime newAppt2 = LocalTime.parse("0" + i + ":15");
                 apptTimes.add(newAppt2);
-                String newAppt3 = LocalTime.parse("0" + i + ":30").toString();
+                LocalTime newAppt3 = LocalTime.parse("0" + i + ":30");
                 apptTimes.add(newAppt3);
-                String newAppt4 = LocalTime.parse("0" + i + ":45").toString();
+                LocalTime newAppt4 = LocalTime.parse("0" + i + ":45");
                 apptTimes.add(newAppt4);
             } else {
-                String newAppt1 = LocalTime.parse(i + ":00").toString();
+                LocalTime newAppt1 = LocalTime.parse(i + ":00");
                 apptTimes.add(newAppt1);
-                String newAppt2 = LocalTime.parse(i + ":15").toString();
+                LocalTime newAppt2 = LocalTime.parse(i + ":15");
                 apptTimes.add(newAppt2);
-                String newAppt3 = LocalTime.parse(i + ":30").toString();
+                LocalTime newAppt3 = LocalTime.parse(i + ":30");
                 apptTimes.add(newAppt3);
-                String newAppt4 = LocalTime.parse(i + ":45").toString();
+                LocalTime newAppt4 = LocalTime.parse(i + ":45");
                 apptTimes.add(newAppt4);
             }
         }
@@ -681,26 +785,32 @@ public class Query {
         try {
             connection = DatabaseConnection.openConnection();
             // saves results from query into ResultSet object
-            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments ORDER BY Start;");
-
+            ResultSet results = connection.createStatement().executeQuery("SELECT Appointment_ID, Customer_ID, Title, Description, Location, Type, User_ID, Contact_ID, DATE(Start) AS Date, TIME(Start) as Start, TIME(End) as End FROM appointments ORDER BY Start");
             // loops through all results to create a new appointment object for each item in records
             while (results.next()) {
-                // converts all appts to user time so it can be displayed in their timezone
-                LocalDateTime apptStartConvertedToUserTime = AppointmentScreen.utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
-                LocalDateTime apptEndConvertedToUserTime = AppointmentScreen.utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
+                LocalDate apptDate = results.getDate("Date").toLocalDate();
+                LocalTime apptStart = results.getTime("Start").toLocalTime();
+                LocalTime apptEnd = results.getTime("End").toLocalTime();
+
+                LocalDateTime apptStartDatabaseLDT = LocalDateTime.of(apptDate, apptStart);
+                LocalDateTime apptEndDatabaseLDT = LocalDateTime.of(apptDate, apptEnd);
+
+                LocalDateTime apptStartUserLDT = convertFromUTCToUserTimeZone(apptStartDatabaseLDT);
+                LocalDateTime apptEndUserLDT = convertFromUTCToUserTimeZone(apptEndDatabaseLDT);
 
                 appointmentsList.add(new Appointment(
-                        results.getString("Appointment_ID"),
-                        results.getString("Customer_ID"),
+                        results.getInt("Appointment_ID"),
+                        results.getInt("Customer_ID"),
                         results.getString("Title"),
                         results.getString("Description"),
                         results.getString("Location"),
                         results.getString("Type"),
-                        apptStartConvertedToUserTime.toString(),
-                        apptStartConvertedToUserTime.toString(),
-                        apptEndConvertedToUserTime.toString(),
-                        results.getString("User_ID"),
-                        results.getString("Contact_ID")));
+                        results.getInt("User_ID"),
+                        results.getInt("Contact_ID"),
+                        apptDate,
+                        apptStartUserLDT.toLocalTime(),
+                        apptEndUserLDT.toLocalTime()
+                        ));
             }
             return appointmentsList;
         } catch (SQLException exception) {
@@ -710,4 +820,44 @@ public class Query {
         }
         return null;
     }
+
+    public static LocalDateTime convertFromUTCToUserTimeZone(LocalDateTime apptDateTime) {
+        ZoneId currentUserZoneId = ZoneId.systemDefault();
+        ZoneId databaseZoneId = ZoneId.of("UTC");
+
+        ZonedDateTime dateTimeToZoned = apptDateTime.atZone(databaseZoneId);
+
+        ZonedDateTime zonedDateTimeToUserZone = dateTimeToZoned.withZoneSameInstant(currentUserZoneId);
+
+        LocalDateTime userZonedDateTimeToLDT = zonedDateTimeToUserZone.toLocalDateTime();
+
+        return userZonedDateTimeToLDT;
+    }
+
+    public static LocalDateTime convertFromUserTimeZoneToUTC(LocalDateTime apptDateTime) {
+        ZoneId currentUserZoneId = ZoneId.systemDefault();
+        ZoneId databaseZoneId = ZoneId.of("UTC");
+
+        ZonedDateTime dateTimeToZoned = apptDateTime.atZone(currentUserZoneId);
+
+        ZonedDateTime userZoneDateTimeToUTC = dateTimeToZoned.withZoneSameInstant(databaseZoneId);
+
+        LocalDateTime UTCZonedDateTimeToLDT = userZoneDateTimeToUTC.toLocalDateTime();
+
+        return UTCZonedDateTimeToLDT;
+    }
+
+    public static LocalDateTime convertFromUserTimeZoneToEST(LocalDateTime apptDateTime) {
+        ZoneId currentUserZoneId = ZoneId.systemDefault();
+        ZoneId businessZoneId = ZoneId.of(ZoneId.SHORT_IDS.get("EST"));
+
+        ZonedDateTime dateTimeToZoned = apptDateTime.atZone(currentUserZoneId);
+
+        ZonedDateTime userZoneDateTimeToEST = dateTimeToZoned.withZoneSameInstant(businessZoneId);
+
+        LocalDateTime ESTZonedDateTimeToLDT = userZoneDateTimeToEST.toLocalDateTime();
+
+        return ESTZonedDateTimeToLDT;
+    }
+
 }
