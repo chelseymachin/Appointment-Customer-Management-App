@@ -18,8 +18,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.LocalTime;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -47,7 +48,7 @@ public class ReportsScreen implements Initializable {
                 a.showAndWait();
             }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("There was a problem producing report one!");
         }
     }
 
@@ -65,7 +66,7 @@ public class ReportsScreen implements Initializable {
                 a.showAndWait();
             }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("There was a problem generating report #2");
         }
     }
 
@@ -98,29 +99,38 @@ public class ReportsScreen implements Initializable {
             StringBuilder reportText = new StringBuilder();
             reportText.append("Contact ID: " + contactId + " - Schedule\n...................................................................................................................................................................................................\n" +
                     "Date        |         Start    |    End   |   Appt ID   |    Title     |      Type      |        Description     |     Customer ID\n.......................................................................................................................................................................................................\n");
-            String sql = "SELECT * FROM appointments WHERE Contact_ID=? ORDER BY Start;";
+            String sql = "SELECT *, DATE(Start) AS Date FROM appointments WHERE Contact_ID=? ORDER BY Start;";
             PreparedStatement prepared = connection.prepareStatement(sql);
             prepared.setString(1, contactId);
             prepared.execute();
             ResultSet results = prepared.getResultSet();
 
             while (results.next()) {
-                    LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
-                    LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
-                    String date = apptStartConvertedToUserTime.toString().substring(0, 10);
-                    String start = apptStartConvertedToUserTime.toString().substring(11, 16);
-                    String end = apptEndConvertedToUserTime.toString().substring(11, 16);
-                    String title = results.getString("Title");
-                    String description = results.getString("Description").substring(0, Math.min(results.getString("Description").length(), 15));;
-                    String type = results.getString("Type");
-                    String customerId = results.getString("Customer_ID");
-                    String appointmentId = results.getString("Appointment_ID");
+                LocalDate apptDate = results.getDate("Date").toLocalDate();
+                LocalTime apptStart = results.getTime("Start").toLocalTime();
+                LocalTime apptEnd = results.getTime("End").toLocalTime();
 
-                    reportText.append(date + "   |   " + start + "   |   " + end + "   |   " + appointmentId + "    |  " + title + " | " + type + " | " +  description + " |  " +  customerId + "\n\n");
+                LocalDateTime apptStartDatabaseLDT = LocalDateTime.of(apptDate, apptStart);
+                LocalDateTime apptEndDatabaseLDT = LocalDateTime.of(apptDate, apptEnd);
+
+                LocalDateTime apptStartUserLDT = Query.convertFromUTCToUserTimeZone(apptStartDatabaseLDT);
+                LocalDateTime apptEndUserLDT = Query.convertFromUTCToUserTimeZone(apptEndDatabaseLDT);
+
+                String date = apptStartUserLDT.toLocalDate().toString();
+                String start = apptStartUserLDT.toLocalTime().toString();
+                String end = apptEndUserLDT.toLocalTime().toString();
+                String title = results.getString("Title");
+                String description = results.getString("Description").substring(0, Math.min(results.getString("Description").length(), 15));;
+                String type = results.getString("Type");
+                String customerId = results.getString("Customer_ID");
+                String appointmentId = results.getString("Appointment_ID");
+
+                reportText.append(date + "   |   " + start + "   |   " + end + "   |   " + appointmentId + "    |  " + title + " | " + type + " | " +  description + " |  " +  customerId + "\n\n");
             }
             return reportText.toString();
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem generating contact's schedule!");
+            exception.printStackTrace();
             return "Oops! Something went wrong!";
         } finally {
             DatabaseConnection.closeConnection();
@@ -142,42 +152,41 @@ public class ReportsScreen implements Initializable {
             reportText.append("Customer ID: " + customerId + " - Schedule\n...................................................................................................................................................................................................\n" +
                     "Date        |         Start    |    End   |   Appt ID   |    Title     |      Type      |        Description     |     Contact ID\n.......................................................................................................................................................................................................\n");
 
-            String sql = "SELECT * FROM appointments WHERE Customer_ID=? ORDER BY Start;";
+            String sql = "SELECT *, DATE(Start) AS Date FROM appointments WHERE Customer_ID=? ORDER BY Start;";
             PreparedStatement prepared = connection.prepareStatement(sql);
             prepared.setString(1, customerId);
             prepared.execute();
             ResultSet results = prepared.getResultSet();
 
             while (results.next()) {
-                    LocalDateTime apptStartConvertedToUserTime = utcToUsersLDT(results.getTimestamp("Start").toLocalDateTime());
-                    LocalDateTime apptEndConvertedToUserTime = utcToUsersLDT(results.getTimestamp("End").toLocalDateTime());
-                    String date = apptStartConvertedToUserTime.toString().substring(0, 10);
-                    String start = apptStartConvertedToUserTime.toString().substring(11, 16);
-                    String end = apptEndConvertedToUserTime.toString().substring(11, 16);
-                    String title = results.getString("Title");
-                    String description = results.getString("Description").substring(0, Math.min(results.getString("Description").length(), 15));;
-                    String type = results.getString("Type");
-                    String contactId = results.getString("Contact_ID");
-                    String appointmentId = results.getString("Appointment_ID");
+                LocalDate apptDate = results.getDate("Date").toLocalDate();
+                LocalTime apptStart = results.getTime("Start").toLocalTime();
+                LocalTime apptEnd = results.getTime("End").toLocalTime();
 
-                    reportText.append(date + "   |   " + start + "   |   " + end + "   |   " + appointmentId + "    |  " + title + " | " + type + " | " +  description + " |  " +  contactId + "\n\n");
+                LocalDateTime apptStartDatabaseLDT = LocalDateTime.of(apptDate, apptStart);
+                LocalDateTime apptEndDatabaseLDT = LocalDateTime.of(apptDate, apptEnd);
+
+                LocalDateTime apptStartUserLDT = Query.convertFromUTCToUserTimeZone(apptStartDatabaseLDT);
+                LocalDateTime apptEndUserLDT = Query.convertFromUTCToUserTimeZone(apptEndDatabaseLDT);
+
+                String date = apptStartUserLDT.toLocalDate().toString();
+                String start = apptStartUserLDT.toLocalTime().toString();
+                String end = apptEndUserLDT.toLocalTime().toString();
+                String title = results.getString("Title");
+                String description = results.getString("Description").substring(0, Math.min(results.getString("Description").length(), 15));;
+                String type = results.getString("Type");
+                String contactId = results.getString("Contact_ID");
+                String appointmentId = results.getString("Appointment_ID");
+
+                reportText.append(date + "   |   " + start + "   |   " + end + "   |   " + appointmentId + "    |  " + title + " | " + type + " | " +  description + " |  " +  contactId + "\n\n");
             }
             return reportText.toString();
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem generating appts for this customer");
             return "Oops! Something went wrong!";
         } finally {
             DatabaseConnection.closeConnection();
         }
-    }
-
-    /**
-     * converts a UTC format LocalDateTime instance to the user system's LocalDateTime - this is for displaying all appts correctly in user timezone
-     * @param utcLocalDateTime the LocalDateTime object in a UTC timezone that needs to be converted to the user's local timezone
-     * @return LocalDateTime object converted to the user's local timezone timezone
-     */
-    public static LocalDateTime utcToUsersLDT(LocalDateTime utcLocalDateTime) {
-        return utcLocalDateTime.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
     }
 
     /** Function that builds a string based report using StringBuilder object of a selected month's type of appointments and number of those types
@@ -213,7 +222,7 @@ public class ReportsScreen implements Initializable {
             }
             return reportText.toString();
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem generating appt types by month report");
             return "Oops! Something went wrong!";
         } finally {
             DatabaseConnection.closeConnection();

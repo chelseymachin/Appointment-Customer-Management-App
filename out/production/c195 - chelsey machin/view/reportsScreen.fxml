@@ -10,7 +10,7 @@
          <font>
             <Font name="System Bold" size="36.0" />
          </font></Label>
-      <TextArea fx:id="reportTextArea" layoutX="10.0" layoutY="81.0" prefHeight="268.0" prefWidth="580.0" stylesheets="@styles/textAreaStyles.css" text="Click a button above to generate a report!" wrapText="true" />
+      <TextArea fx:id="reportTextArea" editable="false" layoutX="10.0" layoutY="81.0" prefHeight="268.0" prefWidth="580.0" stylesheets="@styles/textAreaStyles.css" text="Click a button above to generate a report!" wrapText="true" />
       <Button fx:id="apptsByTypeMonthButton" alignment="CENTER" contentDisplay="CENTER" layoutX="214.0" layoutY="5.0" mnemonicParsing="false" onAction="#reportOneButtonHandler" prefHeight="42.0" prefWidth="107.0" style="-fx-background-color: #ff6b6b; -fx-border-radius: 15px;" text="Appointments by Type/Month" textAlignment="CENTER" wrapText="true">
          <font>
             <Font name="System Bold" size="12.0" />

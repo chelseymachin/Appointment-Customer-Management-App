@@ -1,7 +1,6 @@
 package controller;
 
 import DAO.DatabaseConnection;
-import DAO.Query;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -91,12 +90,12 @@ public class LoginScreen implements Initializable {
                     // creates currentUser object with data of currently logged in user
                     User currentUser = new User(getUserInfo.getString("User_ID"), getUserInfo.getString("User_Name"), true);
                     this.currentUser = currentUser;
-                    AppointmentScreen.passCurrentUserData(this.currentUser);
+                    AppointmentScreen.passCurrentUserData(currentUser);
                     addLoginAttempt(username, true);
 
                     DatabaseConnection.closeConnection();
                 } catch (SQLException exception) {
-                    System.out.println(exception.getMessage());
+                    System.out.println("There was a SQL problem with logging in!");
                 }
                 Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
                 Scene scene = new Scene(parent);
@@ -104,8 +103,6 @@ public class LoginScreen implements Initializable {
                 stage.setScene(scene);
                 stage.setTitle("Appointments");
                 stage.show();
-                // checks for upcoming appts for the currently logged in user
-                Query.checkForUpcomingAppts();
             } else {
                 addLoginAttempt(username, false);
                 Alert a = new Alert(Alert.AlertType.ERROR);
@@ -140,7 +137,7 @@ public class LoginScreen implements Initializable {
                 System.out.println("File already exists. Location: "+ file.getPath());
             }
         } catch (IOException exception){
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to create login activity file!");
         }
     }
 
@@ -165,7 +162,7 @@ public class LoginScreen implements Initializable {
             bufferedWriter.newLine();
             bufferedWriter.close();
         } catch (IOException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("There was a problem adding a login attempt to the file");
         }
     }
 

@@ -1,6 +1,5 @@
 package DAO;
 
-import controller.LoginScreen;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
@@ -8,7 +7,6 @@ import model.*;
 
 import java.sql.*;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
 
 public class Query {
     // these are the "initialization" queries, or queries I expect to run at the very start of the program (checking the login attempt and checking to see if whoever is logging in has upcoming appts)
@@ -40,7 +38,7 @@ public class Query {
             // if result set is positive, returns true/valid login attempt; else returns false
             return results.next();
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Something wrong with query login attempt!");
             return false;
         } finally {
             DatabaseConnection.closeConnection();
@@ -49,29 +47,34 @@ public class Query {
 
     /**
      * Checks currently logged in user's ID and uses that to search through appointments in the database for any matching appointments starting within 15 minutes of user's local time, then produces alert to notify
+     * @param userId accepts an Integer userId to check against the database for upcoming appts
+     *
      */
-    public static void checkForUpcomingAppts() {
+    public static void checkForUpcomingAppts(Integer userId) {
         Connection connection;
+        LocalDateTime nowConvertedToUTC = convertFromUserTimeZoneToUTC(LocalDateTime.now());
+
             try {
                 connection = DatabaseConnection.openConnection();
                 // create result set from query attempt with currently logged in user as input
-                ResultSet apptResults = connection.createStatement().executeQuery(String.format("SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID='%s' AND a.Start BETWEEN '%s' AND '%s'", LoginScreen.currentUser.getUserId(), LocalDateTime.now(ZoneId.of("UTC")), LocalDateTime.now(ZoneId.of("UTC")).plusMinutes(15)));
+                String sql = "SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID=? AND a.Start BETWEEN '?' AND '?'+15";
+                PreparedStatement prepared = connection.prepareStatement(sql);
+                prepared.setInt(1, userId);
+                prepared.setTimestamp(2, Timestamp.valueOf(nowConvertedToUTC));
+                prepared.setTimestamp(3, Timestamp.valueOf(nowConvertedToUTC));
+                prepared.execute();
+                ResultSet results = prepared.getResultSet();
 
                 // Loops through appointment results from database and alerts informing user of customer name, local time of appointment, and location
-                while (apptResults.next()) {
-                    String  location = apptResults.getString("Location");
-                    String name = apptResults.getString("Customer_Name");
-                    String apptTimeUTCString = apptResults.getString("Start");
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                    LocalDateTime usersLocalApptTimeLDT = LocalDateTime.parse(apptTimeUTCString, formatter);
-                    usersLocalApptTimeLDT = usersLocalApptTimeLDT.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+                while (results.next()) {
+                    LocalDateTime apptTimeConvertedToUserTime = convertFromUTCToUserTimeZone(LocalDateTime.parse(results.getString("Start")));
 
                     Alert a = new Alert(Alert.AlertType.INFORMATION);
-                    a.setContentText("You have an appointment with " + name + " starting shortly at " + usersLocalApptTimeLDT.toString().substring(11, 16) + "! Better make your way to " + location + " soon!");
+                    a.setContentText("You have an appointment with " + results.getString("Customer_Name") + " starting shortly at " + apptTimeConvertedToUserTime + "! Better make your way to " + results.getString("Location") + " soon!");
                     a.showAndWait();
                 }
             } catch (SQLException exception) {
-                System.out.println(exception.getMessage());
+                System.out.println("Unable to check for upcoming appts");
             } finally {
                 DatabaseConnection.closeConnection();
             }
@@ -131,7 +134,7 @@ public class Query {
                 }
             }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to check if it conflicts");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -179,7 +182,7 @@ public class Query {
                     }
             }
         } catch (SQLException exception) {
-                System.out.println(exception.getMessage());
+            System.out.println("Problem finding out if it overlaps the customer's other appts!");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -209,7 +212,7 @@ public class Query {
                 hasAppointments = true;
             }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem checking for customer appts");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -238,7 +241,7 @@ public class Query {
                 prepared.setString(1, customerId);
                 prepared.execute();
             } catch (SQLException exception) {
-                System.out.println(exception.getMessage());
+                System.out.println("Problem deleting customer!");
             } finally {
                 DatabaseConnection.closeConnection();
             }
@@ -272,7 +275,7 @@ public class Query {
             prepared.setString(7, customerId);
             prepared.execute();
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem updating customer");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -305,7 +308,7 @@ public class Query {
             prepared.setInt(7, firstLevelDivisionId);
             prepared.execute();
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem adding customer");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -335,7 +338,7 @@ public class Query {
             alert.setContentText("Appt #" + apptId + ", a(n) " + apptType + ", has been deleted from the list.");
             alert.showAndWait();
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem deleting appt");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -360,7 +363,7 @@ public class Query {
         try {
             connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
-            String sql = "UPDATE appointments SET Title=?, Description=?, Location=?, Type=?, Start=?, End=?, Last_Update=NOW(), Last_Updated_By=?, Customer_ID=?, Contact_ID=? WHERE Appointment_ID=?;";
+            String sql = "UPDATE appointments SET Title=?, Description=?, Location=?, Type=?, Start=?, End=?, Last_Update=NOW(), Last_Updated_By=?, Customer_ID=?, Contact_ID=?, User_ID=? WHERE Appointment_ID=?;";
             PreparedStatement prepared = connection.prepareStatement(sql);
             prepared.setString(1, title);
             prepared.setString(2, description);
@@ -371,10 +374,11 @@ public class Query {
             prepared.setInt(7, userId);
             prepared.setInt(8, customerId);
             prepared.setInt(9, contactId);
+            prepared.setInt(10, userId);
             prepared.setString(10, appointmentId);
             prepared.execute();
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem trying to update appt");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -414,7 +418,7 @@ public class Query {
             prepared.setInt(11, contactId);
             prepared.execute();
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem trying to add appointment");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -446,7 +450,7 @@ public class Query {
                 firstLevelDivisionsList.add(newFLD);
             }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get FLD list");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -476,7 +480,7 @@ public class Query {
                 countriesList.add(newCountry);
             }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get countries list");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -516,11 +520,11 @@ public class Query {
             }
             return divisions;
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
-            return null;
+            System.out.println("Unable to get first level divisions by  country");
         } finally {
             DatabaseConnection.closeConnection();
         }
+        return null;
     }
 
     /**
@@ -543,7 +547,7 @@ public class Query {
             ResultSet results = prepared.getResultSet();
             return results.getInt("Division_ID");
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get first level division id");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -554,15 +558,17 @@ public class Query {
         Connection connection;
         try {
             connection = DatabaseConnection.openConnection();
-            String sql = "SELECT Division FROM divisions WHERE Division_ID=?";
+            String sql = "SELECT Division FROM first_level_divisions WHERE Division_ID=?";
             PreparedStatement prepared = connection.prepareStatement(sql);
             prepared.setInt(1, firstLevelDivisionId);
             prepared.execute();
 
             ResultSet results = prepared.getResultSet();
-            return results.getString("Division");
+            if (results.next()) {
+                return results.getString("Division");
+            }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get first level division name");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -589,7 +595,7 @@ public class Query {
                 ));
             }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get users list");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -617,7 +623,7 @@ public class Query {
                 ));
             }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get customers list");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -633,9 +639,12 @@ public class Query {
             prepared.setInt(1, divisionId);
             prepared.execute();
             ResultSet result = prepared.getResultSet();
-            return result.getString("Country");
+
+            if (result.next()) {
+                return result.getString("Country");
+            }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Couldn't get country name by division ID");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -651,19 +660,22 @@ public class Query {
             prepared.setInt(1, customerId);
             prepared.execute();
             ResultSet result = prepared.getResultSet();
-            Customer selectedCustomer = new Customer(
-                    customerId,
-                    result.getString("Customer_Name"),
-                    result.getString("Address"),
-                    getFirstLevelDivisionName(result.getInt("Division_ID")),
-                    result.getInt("Division_ID"),
-                    result.getString("Postal_Code"),
-                    getCountryNameByDivisionId(result.getInt("Division_ID")),
-                    result.getString("Phone")
-            );
-            return selectedCustomer;
+
+            if (result.next()) {
+                Customer selectedCustomer = new Customer(
+                        customerId,
+                        result.getString("Customer_Name"),
+                        result.getString("Address"),
+                        getFirstLevelDivisionName(result.getInt("Division_ID")),
+                        result.getInt("Division_ID"),
+                        result.getString("Postal_Code"),
+                        getCountryNameByDivisionId(result.getInt("Division_ID")),
+                        result.getString("Phone")
+                );
+                return selectedCustomer;
+            }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get customer by id");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -679,13 +691,16 @@ public class Query {
             prepared.setInt(1, userId);
             prepared.execute();
             ResultSet result = prepared.getResultSet();
-            User selectedUser = new User(
-                    userId,
-                    result.getString("User_Name")
-            );
-            return selectedUser;
+
+            if (result.next()) {
+                User selectedUser = new User(
+                        userId,
+                        result.getString("User_Name")
+                );
+                return selectedUser;
+            }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get user by ID");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -701,13 +716,15 @@ public class Query {
             prepared.setInt(1, contactId);
             prepared.execute();
             ResultSet result = prepared.getResultSet();
-            Contact selectedContact = new Contact(
-                    contactId,
-                    result.getString("Contact_Name")
-            );
-            return selectedContact;
+            if (result.next()) {
+                Contact selectedContact = new Contact(
+                        contactId,
+                        result.getString("Contact_Name")
+                );
+                return selectedContact;
+            }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get contact by ID");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -734,7 +751,7 @@ public class Query {
                 ));
             }
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get list of contacts");
         } finally {
             DatabaseConnection.closeConnection();
         }
@@ -814,7 +831,81 @@ public class Query {
             }
             return appointmentsList;
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to get all appointments");
+        } finally {
+            DatabaseConnection.closeConnection();
+        }
+        return null;
+    }
+
+    public static ObservableList<Appointment> getAppointmentsThisWeek() {
+        Connection connection;
+        ObservableList<Appointment> appointmentsList = FXCollections.observableArrayList();
+        try {
+            connection = DatabaseConnection.openConnection();
+
+            ResultSet results = connection.createStatement().executeQuery("SELECT *, DATE(Start) AS StartDate FROM appointments WHERE YEARWEEK(Start)=YEARWEEK(NOW())");
+
+            // loops through results and adds an appointment object to the view's observable list for each record that matches the input week selected
+            while (results.next()) {
+
+                // converts all appts to user time so it can be displayed in their timezone
+                LocalDateTime apptStartConvertedToUserTime = convertFromUTCToUserTimeZone(results.getTimestamp("Start").toLocalDateTime());
+                LocalDateTime apptEndConvertedToUserTime = convertFromUserTimeZoneToUTC(results.getTimestamp("End").toLocalDateTime());
+
+                appointmentsList.add(new Appointment(
+                        results.getInt("Appointment_ID"),
+                        results.getInt("Customer_ID"),
+                        results.getString("Title"),
+                        results.getString("Description"),
+                        results.getString("Location"),
+                        results.getString("Type"),
+                        results.getInt("User_ID"),
+                        results.getInt("Contact_ID"),
+                        results.getDate("StartDate").toLocalDate(),
+                        apptStartConvertedToUserTime.toLocalTime(),
+                        apptEndConvertedToUserTime.toLocalTime()
+                ));
+            }
+            return appointmentsList;
+        } catch (SQLException exception) {
+            System.out.println("Unable to get weekly appointments list");
+        } finally {
+            DatabaseConnection.closeConnection();
+        }
+        return null;
+    }
+
+    public static ObservableList<Appointment> getAppointmentsThisMonth() {
+        Connection connection;
+        ObservableList<Appointment> appointmentsList = FXCollections.observableArrayList();
+        try {
+            connection = DatabaseConnection.openConnection();
+
+            ResultSet results = connection.createStatement().executeQuery("SELECT *, DATE(Start) AS StartDate FROM appointments WHERE MONTH(Start)=MONTH(NOW())");
+
+            while (results.next()) {
+                // converts all appts to user time so it can be displayed in their timezone
+                LocalDateTime apptStartConvertedToUserTime = convertFromUTCToUserTimeZone(results.getTimestamp("Start").toLocalDateTime());
+                LocalDateTime apptEndConvertedToUserTime = convertFromUserTimeZoneToUTC(results.getTimestamp("End").toLocalDateTime());
+
+                appointmentsList.add(new Appointment(
+                        results.getInt("Appointment_ID"),
+                        results.getInt("Customer_ID"),
+                        results.getString("Title"),
+                        results.getString("Description"),
+                        results.getString("Location"),
+                        results.getString("Type"),
+                        results.getInt("User_ID"),
+                        results.getInt("Contact_ID"),
+                        results.getDate("StartDate").toLocalDate(),
+                        apptStartConvertedToUserTime.toLocalTime(),
+                        apptEndConvertedToUserTime.toLocalTime()
+                ));
+            }
+            return appointmentsList;
+        } catch (SQLException exception) {
+            System.out.println("Unable to get monthly appointments list");
         } finally {
             DatabaseConnection.closeConnection();
         }

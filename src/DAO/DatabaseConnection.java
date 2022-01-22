@@ -25,7 +25,7 @@ public abstract class DatabaseConnection {
         }
         catch(Exception exception)
         {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem opening DB connection");
         }
         return connection;
     }
@@ -37,7 +37,7 @@ public abstract class DatabaseConnection {
         }
         catch(Exception exception)
         {
-            System.out.println(exception.getMessage());
+            System.out.println("Problem closing DB connection");
         }
     }
 }

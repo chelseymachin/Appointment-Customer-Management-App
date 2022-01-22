@@ -112,7 +112,7 @@ public class CustomersScreen implements Initializable {
                         userId
                 );
             } catch (SQLException exception) {
-                System.out.println(exception.getMessage());
+                System.out.println("There was a problem saving the customer");
             }
         }
         Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
@@ -264,7 +264,7 @@ public class CustomersScreen implements Initializable {
                 }
                 stateComboBox.setItems(fldObservableList);
             } catch (SQLException exception){
-                System.out.println(exception.getMessage());
+                System.out.println("There was a problem filtering the first level divisions by country selected!");
             }
         }
     }
@@ -297,7 +297,7 @@ public class CustomersScreen implements Initializable {
             }
             customersTable.setItems(customersObservableList);
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("There was a problem viewing all customers!");
         } finally {
             DatabaseConnection.closeConnection();
         }
