@@ -848,7 +848,7 @@ public class Query {
         try {
             connection = DatabaseConnection.openConnection();
 
-            ResultSet results = connection.createStatement().executeQuery("SELECT *, DATE(Start) AS StartDate FROM appointments WHERE YEARWEEK(Start)=YEARWEEK(NOW())");
+            ResultSet results = connection.createStatement().executeQuery("SELECT * FROM appointments WHERE Start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 7 DAY);");
 
             // loops through results and adds an appointment object to the view's observable list for each record that matches the input week selected
             while (results.next()) {
@@ -866,13 +866,14 @@ public class Query {
                         results.getString("Type"),
                         results.getInt("User_ID"),
                         results.getInt("Contact_ID"),
-                        results.getDate("StartDate").toLocalDate(),
+                        results.getDate("Start").toLocalDate(),
                         apptStartConvertedToUserTime.toLocalTime(),
                         apptEndConvertedToUserTime.toLocalTime()
                 ));
             }
             return appointmentsList;
         } catch (SQLException exception) {
+            exception.printStackTrace();
             System.out.println("Unable to get weekly appointments list");
         } finally {
             DatabaseConnection.closeConnection();
