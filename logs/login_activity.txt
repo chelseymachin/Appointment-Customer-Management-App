@@ -376,3 +376,13 @@ test attempted a login at 2022-01-21 20:24:19.1043201
 test's login attempt was a success!
 test attempted a login at 2022-01-21 20:28:34.9148022
 test's login attempt was a success!
+test attempted a login at 2022-01-21 20:40:39.9942559
+test's login attempt failed!
+test attempted a login at 2022-01-21 20:40:50.3391743
+test's login attempt was a success!
+test attempted a login at 2022-01-21 20:46:00.9734947
+test's login attempt was a success!
+test attempted a login at 2022-01-21 20:48:56.6255928
+test's login attempt was a success!
+test attempted a login at 2022-01-21 20:51:40.2916177
+test's login attempt was a success!

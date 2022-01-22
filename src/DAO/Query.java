@@ -227,6 +227,8 @@ public class Query {
      * @param customerId customer ID as string
      */
     public static void deleteCustomer(String customerId) {
+        Customer deletionProspect = getCustomerById(Integer.parseInt(customerId));
+
         if (checkForCustomerAppointments(customerId)) {
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("You cannot delete a customer that has open appointments!  Please delete this customer's appointments first before trying to delete the customer again.");
@@ -234,6 +236,10 @@ public class Query {
         } else {
             Connection connection;
             try {
+                Alert a = new Alert(Alert.AlertType.INFORMATION);
+                a.setHeaderText("Customer ID #" + deletionProspect.getCustomerId() + " deleted!");
+                a.setContentText(deletionProspect.getName() + " has been deleted from the customer records!");
+                a.showAndWait();
                 connection = DatabaseConnection.openConnection();
                 // prep SQL statement; then insert variables from function input
                 String sql = "DELETE FROM customers WHERE Customer_ID=?;";

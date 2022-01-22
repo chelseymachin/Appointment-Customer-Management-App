@@ -29,22 +29,39 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class AppointmentScreen implements Initializable {
+    /** button to edit when an appointment from the table has been selected */
     @FXML public Button editApptButton;
+    /** text field to push the selected appointment's ID when one is selected to edit */
     @FXML public TextField apptIdInput;
+    /** text field to edit the title of a selected appointment */
     @FXML public TextField apptTitleInput;
+    /** text area to edit the description of a selected appointment */
     @FXML public TextArea apptDescriptionInput;
+    /** text field to edit the location of a selected appointment */
     @FXML public TextField apptLocationInput;
+    /** text field to edit the type of a selected appointment */
     @FXML public TextField apptTypeInput;
+    /** combo box to hold the contacts available to select */
     @FXML public ComboBox<Contact> apptContactComboBox;
+    /** combo box to hold the customers available to select */
     @FXML public ComboBox<Customer> apptCustomerComboBox;
+    /** combo box to hold the users available to select */
     @FXML public ComboBox<User> apptUserComboBox;
+    /** date picker for the user to select a date for the appointment or for a selected appointment to display it's saved date */
     @FXML public DatePicker apptDatePicker;
+    /** combo box to hold the appointment start times aviailable */
     @FXML public ComboBox apptStartTimeComboBox;
+    /** combo box to hold the appointment end times available */
     @FXML public ComboBox apptEndTimeComboBox;
+    /** button to clear all fields and currently selected appointments */
     @FXML public Button clearButton;
+    /** toggle group for view selection toggle buttons */
     @FXML public ToggleGroup viewSelection;
+    /** toggle button to view all appts */
     @FXML public ToggleButton viewAllToggle;
+    /** toggle button to view monthly appts */
     @FXML public ToggleButton viewMonthToggle;
+    /** toggle button to view weeklyk appts */
     @FXML public ToggleButton viewWeekToggle;
     @FXML private TableView<Appointment> apptsTable;
     @FXML private TableColumn<Appointment, String> apptIdCol;
