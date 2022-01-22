@@ -72,6 +72,9 @@ public class Query {
                     a.setContentText("You have an appointment with " + results.getString("Customer_Name") + " starting shortly at " + apptTimeConvertedToUserTime + "! Better make your way to " + results.getString("Location") + " soon!");
                     a.showAndWait();
                 } else {
+                    Alert a = new Alert(Alert.AlertType.INFORMATION);
+                    a.setContentText("You have no upcoming appointments!");
+                    a.showAndWait();
                     return;
                 }
             } catch (SQLException exception) {
