@@ -85,9 +85,6 @@ public class AppointmentScreen implements Initializable {
     ObservableList<LocalTime> apptTimesList = FXCollections.observableArrayList();
     Appointment selectedAppointment;
     public static User currentUser;
-    public boolean isMonthlyView = false;
-    public boolean isWeeklyView = false;
-    public boolean isViewAll = true;
 
     /**
      * used to pass the user data about the user currently logged in from the login screen
@@ -185,9 +182,6 @@ public class AppointmentScreen implements Initializable {
      */
     public void viewByWeek() {
         viewWeeklyApptsRun();
-        isWeeklyView = true;
-        isMonthlyView = false;
-        isViewAll = false;
         viewWeekToggle.isSelected();
     }
 
@@ -196,9 +190,6 @@ public class AppointmentScreen implements Initializable {
      */
     public void viewByMonth() {
         viewMonthlyApptsRun();
-        isWeeklyView = false;
-        isMonthlyView = true;
-        isViewAll = false;
         viewMonthToggle.isSelected();
     }
 
@@ -207,9 +198,6 @@ public class AppointmentScreen implements Initializable {
      */
     public void viewAll() {
         viewAllApptsRun();
-        isWeeklyView = false;
-        isMonthlyView = false;
-        isViewAll = true;
         viewAllToggle.isSelected();
     }
 
@@ -290,7 +278,6 @@ public class AppointmentScreen implements Initializable {
             startTime = stringToLDTConverter(apptStart, apptDateString);
             startEST = Query.convertFromUserTimeZoneToEST(startTime);
             startUTC = Query.convertFromUserTimeZoneToUTC(startTime);
-
 
             // gets appt end time as LocalTime object from combobox, converts it to LocalDateTime object, then converts it to EST and UTC to use for more validation below
             String apptEnd = apptEndTimeComboBox.getValue().toString();
@@ -515,16 +502,8 @@ public class AppointmentScreen implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        if (isWeeklyView) {
-            viewWeekToggle.isSelected();
-            viewWeeklyApptsRun();
-        } else if (isMonthlyView) {
-            viewMonthToggle.isSelected();
-            viewMonthlyApptsRun();
-        } else {
-            viewAllToggle.isSelected();
-            viewAllApptsRun();
-        }
+        viewAllToggle.isSelected();
+        viewAllApptsRun();
 
         apptIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
         customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
@@ -570,7 +549,5 @@ public class AppointmentScreen implements Initializable {
             }
         });
         apptDatePicker.setEditable(false);
-
-        Query.checkForUpcomingAppts(currentUser.getUserId());
     }
 }

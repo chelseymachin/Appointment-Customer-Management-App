@@ -57,7 +57,7 @@ public class Query {
             try {
                 connection = DatabaseConnection.openConnection();
                 // create result set from query attempt with currently logged in user as input
-                String sql = "SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID=? AND a.Start BETWEEN '?' AND '?'+15";
+                String sql = "SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID=? AND a.Start BETWEEN ? AND ?+15";
                 PreparedStatement prepared = connection.prepareStatement(sql);
                 prepared.setInt(1, userId);
                 prepared.setTimestamp(2, Timestamp.valueOf(nowConvertedToUTC));
@@ -66,12 +66,13 @@ public class Query {
                 ResultSet results = prepared.getResultSet();
 
                 // Loops through appointment results from database and alerts informing user of customer name, local time of appointment, and location
-                while (results.next()) {
+                if (results.next()) {
                     LocalDateTime apptTimeConvertedToUserTime = convertFromUTCToUserTimeZone(LocalDateTime.parse(results.getString("Start")));
-
                     Alert a = new Alert(Alert.AlertType.INFORMATION);
                     a.setContentText("You have an appointment with " + results.getString("Customer_Name") + " starting shortly at " + apptTimeConvertedToUserTime + "! Better make your way to " + results.getString("Location") + " soon!");
                     a.showAndWait();
+                } else {
+                    return;
                 }
             } catch (SQLException exception) {
                 System.out.println("Unable to check for upcoming appts");
@@ -94,23 +95,19 @@ public class Query {
     public static boolean doesItOverlapAnyExistingApptButItself(LocalDateTime start, LocalDateTime end, Integer customerId, Integer apptId) {
        Connection connection;
 
-        // converts input LDT/date + time to just a LT/time object
-        LocalTime startTime = start.toLocalTime();
-        LocalTime endTime = end.toLocalTime();
-
         try {
             connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
-            String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
+            String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments WHERE (? >= Start AND ? <= End) OR (? <= Start AND ? >= End) OR (? <= Start AND ? >= Start) OR (? <= End AND ? >= End)";
             PreparedStatement preparedSQL = connection.prepareStatement(sql);
-            preparedSQL.setString(1, startTime.toString());
-            preparedSQL.setString(2, startTime.toString());
-            preparedSQL.setString(3, endTime.toString());
-            preparedSQL.setString(4, endTime.toString());
-            preparedSQL.setString(5, startTime.toString());
-            preparedSQL.setString(6, endTime.toString());
-            preparedSQL.setString(7, startTime.toString());
-            preparedSQL.setString(8, endTime.toString());
+            preparedSQL.setTimestamp(1, Timestamp.valueOf(start));
+            preparedSQL.setTimestamp(2, Timestamp.valueOf(start));
+            preparedSQL.setTimestamp(3, Timestamp.valueOf(end));
+            preparedSQL.setTimestamp(4, Timestamp.valueOf(end));
+            preparedSQL.setTimestamp(5, Timestamp.valueOf(start));
+            preparedSQL.setTimestamp(6, Timestamp.valueOf(end));
+            preparedSQL.setTimestamp(7, Timestamp.valueOf(start));
+            preparedSQL.setTimestamp(8, Timestamp.valueOf(end));
             preparedSQL.execute();
             ResultSet results = preparedSQL.getResultSet();
 
@@ -381,9 +378,10 @@ public class Query {
             prepared.setInt(8, customerId);
             prepared.setInt(9, contactId);
             prepared.setInt(10, userId);
-            prepared.setString(10, appointmentId);
+            prepared.setString(11, appointmentId);
             prepared.execute();
         } catch (SQLException exception) {
+            exception.printStackTrace();
             System.out.println("Problem trying to update appt");
         } finally {
             DatabaseConnection.closeConnection();

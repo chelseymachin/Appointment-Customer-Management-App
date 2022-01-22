@@ -1,6 +1,7 @@
 package controller;
 
 import DAO.DatabaseConnection;
+import DAO.Query;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -93,6 +94,7 @@ public class LoginScreen implements Initializable {
                     AppointmentScreen.passCurrentUserData(currentUser);
                     addLoginAttempt(username, true);
 
+
                     DatabaseConnection.closeConnection();
                 } catch (SQLException exception) {
                     System.out.println("There was a SQL problem with logging in!");
@@ -103,6 +105,7 @@ public class LoginScreen implements Initializable {
                 stage.setScene(scene);
                 stage.setTitle("Appointments");
                 stage.show();
+                Query.checkForUpcomingAppts(currentUser.getUserId());
             } else {
                 addLoginAttempt(username, false);
                 Alert a = new Alert(Alert.AlertType.ERROR);
