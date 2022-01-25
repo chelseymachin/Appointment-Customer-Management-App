@@ -35,7 +35,7 @@ public class LoginScreen implements Initializable {
     @FXML private TextField passwordTextField;
     @FXML private Label locationLabel;
     @FXML private AnchorPane loginScreenPane;
-    User currentUser;
+    public static User currentUser;
     Stage stage;
 
     // button handler functions
@@ -81,7 +81,7 @@ public class LoginScreen implements Initializable {
                 try {
                     connection = DatabaseConnection.openConnection();
 
-                    String sql = "SELECT User_ID, User_Name From USERS where User_Name=?;";
+                    String sql = "SELECT User_ID, User_Name From users where User_Name=?;";
                     PreparedStatement prepared = connection.prepareStatement(sql);
                     prepared.setString(1, username);
                     prepared.execute();
@@ -90,12 +90,14 @@ public class LoginScreen implements Initializable {
 
                     // creates currentUser object with data of currently logged in user
                     User currentUser = new User(getUserInfo.getString("User_ID"), getUserInfo.getString("User_Name"), true);
-                    System.out.println("Current userId: " + currentUser.getUserId() + " userName: " + currentUser.getUsername());
                     this.currentUser = currentUser;
-                    AppointmentScreen.passCurrentUserData(this.currentUser);
+                    AppointmentScreen.passCurrentUserData(currentUser);
                     addLoginAttempt(username, true);
+
+
+                    DatabaseConnection.closeConnection();
                 } catch (SQLException exception) {
-                    System.out.println(exception.getMessage());
+                    System.out.println("There was a SQL problem with logging in!");
                 }
                 Parent parent = FXMLLoader.load(getClass().getResource("/view/appointmentScreen.fxml"));
                 Scene scene = new Scene(parent);
@@ -103,8 +105,7 @@ public class LoginScreen implements Initializable {
                 stage.setScene(scene);
                 stage.setTitle("Appointments");
                 stage.show();
-                // checks for upcoming appts for the currently logged in user
-                Query.checkForUpcomingAppts();
+                Query.checkForUpcomingAppts(currentUser.getUserId());
             } else {
                 addLoginAttempt(username, false);
                 Alert a = new Alert(Alert.AlertType.ERROR);
@@ -139,7 +140,7 @@ public class LoginScreen implements Initializable {
                 System.out.println("File already exists. Location: "+ file.getPath());
             }
         } catch (IOException exception){
-            System.out.println(exception.getMessage());
+            System.out.println("Unable to create login activity file!");
         }
     }
 
@@ -164,7 +165,7 @@ public class LoginScreen implements Initializable {
             bufferedWriter.newLine();
             bufferedWriter.close();
         } catch (IOException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("There was a problem adding a login attempt to the file");
         }
     }
 

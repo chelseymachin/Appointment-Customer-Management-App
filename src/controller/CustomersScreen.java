@@ -1,5 +1,6 @@
 package controller;
 
+import DAO.DatabaseConnection;
 import DAO.Query;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -20,13 +21,12 @@ import model.User;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.ResourceBundle;
-
-import static DAO.DatabaseConnection.connection;
 
 public class CustomersScreen implements Initializable {
     public Button clearButton;
@@ -43,8 +43,8 @@ public class CustomersScreen implements Initializable {
     @FXML private TextField customerAddressInput;
     @FXML private TextField postalCodeInput;
     @FXML private TextField customerPhoneInput;
-    @FXML private ComboBox stateComboBox;
-    @FXML private ComboBox countryComboBox;
+    @FXML private ComboBox<FirstLevelDivision> stateComboBox;
+    @FXML private ComboBox<Country> countryComboBox;
     @FXML private Button backButton;
     @FXML private Button logoutButton;
     @FXML private Button editButton;
@@ -52,12 +52,12 @@ public class CustomersScreen implements Initializable {
     @FXML private Button deleteButton;
     @FXML private AnchorPane customersScreenPane;
     ObservableList<Customer> customersObservableList = FXCollections.observableArrayList();
-    ObservableList<String> countriesObservableList = FXCollections.observableArrayList();
-    ObservableList<String> fldObservableList = FXCollections.observableArrayList();
+    ObservableList<Country> countriesObservableList = FXCollections.observableArrayList();
+    ObservableList<FirstLevelDivision> fldObservableList = FXCollections.observableArrayList();
     private Customer selectedCustomer;
     private FirstLevelDivision selectedCustomerFLD;
     private Country selectedCustomerCountry;
-    private User currentUser;
+    public static User currentUser;
     Stage stage;
 
     // button handler functions
@@ -71,23 +71,24 @@ public class CustomersScreen implements Initializable {
         String customerId;
         String customerName = null;
         String address = null;
-        String fld = null;
         String zip = null;
         String phone = null;
+        Integer fldId = null;
 
         if (customerNameInput.getText().isEmpty() || customerAddressInput.getText().isEmpty() || stateComboBox.getSelectionModel().isEmpty() || countryComboBox.getSelectionModel().isEmpty() || postalCodeInput.getText().isEmpty() || customerPhoneInput.getText().isEmpty()) {
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please enter a value/selection for all fields in order to save!");
             a.showAndWait();
+            return;
         } else {
             customerName = customerNameInput.getText();
             address = customerAddressInput.getText();
-            fld = stateComboBox.getValue().toString();
+            fldId = stateComboBox.getValue().getFirstLevelDivisionId();
             zip = postalCodeInput.getText();
             phone = customerPhoneInput.getText();
         }
 
-        Integer userId = currentUser.getUserId();
+        Integer userId = LoginScreen.currentUser.getUserId();
 
         if (!customerIdInput.getText().isEmpty()) {
             customerId = customerIdInput.getText();
@@ -97,7 +98,7 @@ public class CustomersScreen implements Initializable {
                     address,
                     zip,
                     phone,
-                    Query.getFirstLevelDivisionId(fld),
+                    fldId,
                     userId
             );
         } else {
@@ -107,11 +108,11 @@ public class CustomersScreen implements Initializable {
                         address,
                         zip,
                         phone,
-                        Query.getFirstLevelDivisionId(fld),
+                        fldId,
                         userId
                 );
             } catch (SQLException exception) {
-                System.out.println(exception.getMessage());
+                System.out.println("There was a problem saving the customer");
             }
         }
         Parent parent = FXMLLoader.load(getClass().getResource("/view/customersScreen.fxml"));
@@ -197,11 +198,27 @@ public class CustomersScreen implements Initializable {
             customerIdInput.setDisable(true);
             customerIdInput.setText(selectedCustomer.getCustomerId().toString());
             customerNameInput.setText(selectedCustomer.getName());
+            customerPhoneInput.setText(selectedCustomer.getPhoneNumber());
             customerAddressInput.setText(selectedCustomer.getAddress());
             postalCodeInput.setText(selectedCustomer.getZip());
-            countryComboBox.setValue(selectedCustomer.getCountryName());
-            stateComboBox.setValue(selectedCustomer.getFirstLevelDivisionName());
-            customerPhoneInput.setText(selectedCustomer.getPhoneNumber());
+
+            String selectedCustomerCountry = selectedCustomer.getCountryName();
+            for (Country country : countryComboBox.getItems()) {
+                if (selectedCustomerCountry.equals(country.getCountryName())) {
+                    countryComboBox.setValue(country);
+                    break;
+                }
+            }
+
+            String selectedCustomerFLD = selectedCustomer.getFirstLevelDivisionName();
+            for (FirstLevelDivision fld : stateComboBox.getItems()) {
+                if (selectedCustomerFLD.equals(fld.getFirstLevelDivisionName())) {
+                    stateComboBox.setValue(fld);
+                    break;
+                }
+            }
+
+
         } else {
             Alert a = new Alert(Alert.AlertType.ERROR);
             a.setContentText("Please select a customer in order to edit!");
@@ -234,15 +251,20 @@ public class CustomersScreen implements Initializable {
         if (!countryComboBox.getSelectionModel().isEmpty()) {
             fldObservableList.clear();
             try {
-                ObservableList<FirstLevelDivision> firstLevelDivisions = Query.getFirstLevelDivisionsByCountry(countryComboBox.getSelectionModel().getSelectedItem().toString());
+                ObservableList<FirstLevelDivision> firstLevelDivisions = Query.getFirstLevelDivisionsByCountry(countryComboBox.getValue().getCountryName());
                 if (firstLevelDivisions != null) {
                     for (FirstLevelDivision firstLevelDivision: firstLevelDivisions) {
-                        fldObservableList.add(firstLevelDivision.firstLevelDivisionName);
+                        FirstLevelDivision newFLD = new FirstLevelDivision(
+                                firstLevelDivision.getFirstLevelDivisionId(),
+                                firstLevelDivision.getCountryId(),
+                                firstLevelDivision.getFirstLevelDivisionName()
+                        );
+                        fldObservableList.add(newFLD);
                     }
                 }
                 stateComboBox.setItems(fldObservableList);
             } catch (SQLException exception){
-                System.out.println(exception.getMessage());
+                System.out.println("There was a problem filtering the first level divisions by country selected!");
             }
         }
     }
@@ -251,7 +273,9 @@ public class CustomersScreen implements Initializable {
      * lambda function provides a functional interface for me to quickly view all customers on screen initialization
      */
     Runnable viewAllCustomers = () -> {
+        Connection connection;
         try {
+            connection = DatabaseConnection.openConnection();
             customersObservableList.clear();
 
             String sql = "SELECT * FROM customers INNER JOIN first_level_divisions ON customers.Division_ID = first_level_divisions.Division_ID INNER JOIN countries ON countries.Country_ID=first_level_divisions.COUNTRY_ID;";
@@ -273,7 +297,9 @@ public class CustomersScreen implements Initializable {
             }
             customersTable.setItems(customersObservableList);
         } catch (SQLException exception) {
-            System.out.println(exception.getMessage());
+            System.out.println("There was a problem viewing all customers!");
+        } finally {
+            DatabaseConnection.closeConnection();
         }
     };
 
