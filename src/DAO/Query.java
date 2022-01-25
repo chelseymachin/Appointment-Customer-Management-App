@@ -857,8 +857,15 @@ public class Query {
             while (results.next()) {
 
                 // converts all appts to user time so it can be displayed in their timezone
-                LocalDateTime apptStartConvertedToUserTime = convertFromUTCToUserTimeZone(results.getTimestamp("Start").toLocalDateTime());
-                LocalDateTime apptEndConvertedToUserTime = convertFromUserTimeZoneToUTC(results.getTimestamp("End").toLocalDateTime());
+                LocalDate apptDate = results.getDate("Start").toLocalDate();
+                LocalTime apptStart = results.getTime("Start").toLocalTime();
+                LocalTime apptEnd = results.getTime("End").toLocalTime();
+
+                LocalDateTime apptStartDatabaseLDT = LocalDateTime.of(apptDate, apptStart);
+                LocalDateTime apptEndDatabaseLDT = LocalDateTime.of(apptDate, apptEnd);
+
+                LocalDateTime apptStartUserLDT = convertFromUTCToUserTimeZone(apptStartDatabaseLDT);
+                LocalDateTime apptEndUserLDT = convertFromUTCToUserTimeZone(apptEndDatabaseLDT);
 
                 appointmentsList.add(new Appointment(
                         results.getInt("Appointment_ID"),
@@ -869,9 +876,9 @@ public class Query {
                         results.getString("Type"),
                         results.getInt("User_ID"),
                         results.getInt("Contact_ID"),
-                        results.getDate("Start").toLocalDate(),
-                        apptStartConvertedToUserTime.toLocalTime(),
-                        apptEndConvertedToUserTime.toLocalTime()
+                        apptDate,
+                        apptStartUserLDT.toLocalTime(),
+                        apptEndUserLDT.toLocalTime()
                 ));
             }
             return appointmentsList;
@@ -894,8 +901,15 @@ public class Query {
 
             while (results.next()) {
                 // converts all appts to user time so it can be displayed in their timezone
-                LocalDateTime apptStartConvertedToUserTime = convertFromUTCToUserTimeZone(results.getTimestamp("Start").toLocalDateTime());
-                LocalDateTime apptEndConvertedToUserTime = convertFromUserTimeZoneToUTC(results.getTimestamp("End").toLocalDateTime());
+                LocalDate apptDate = results.getDate("Start").toLocalDate();
+                LocalTime apptStart = results.getTime("Start").toLocalTime();
+                LocalTime apptEnd = results.getTime("End").toLocalTime();
+
+                LocalDateTime apptStartDatabaseLDT = LocalDateTime.of(apptDate, apptStart);
+                LocalDateTime apptEndDatabaseLDT = LocalDateTime.of(apptDate, apptEnd);
+
+                LocalDateTime apptStartUserLDT = convertFromUTCToUserTimeZone(apptStartDatabaseLDT);
+                LocalDateTime apptEndUserLDT = convertFromUTCToUserTimeZone(apptEndDatabaseLDT);
 
                 appointmentsList.add(new Appointment(
                         results.getInt("Appointment_ID"),
@@ -906,9 +920,9 @@ public class Query {
                         results.getString("Type"),
                         results.getInt("User_ID"),
                         results.getInt("Contact_ID"),
-                        results.getDate("StartDate").toLocalDate(),
-                        apptStartConvertedToUserTime.toLocalTime(),
-                        apptEndConvertedToUserTime.toLocalTime()
+                        apptDate,
+                        apptStartUserLDT.toLocalTime(),
+                        apptEndUserLDT.toLocalTime()
                 ));
             }
             return appointmentsList;
