@@ -279,6 +279,7 @@ public class AppointmentScreen implements Initializable {
             startEST = Query.convertFromUserTimeZoneToEST(startTime);
             startUTC = Query.convertFromUserTimeZoneToUTC(startTime);
 
+
             // gets appt end time as LocalTime object from combobox, converts it to LocalDateTime object, then converts it to EST and UTC to use for more validation below
             String apptEnd = apptEndTimeComboBox.getValue().toString();
             endTime = stringToLDTConverter(apptEnd, apptDateString);
@@ -484,18 +485,21 @@ public class AppointmentScreen implements Initializable {
 
     /** lambda function provides a functional interface for me to quickly view all appointments on screen initialization; putting this into a lambda function allows me to execute it as a runnable function on demand, which is handier than putting all of it in my initialization manually.  It also means that I can call it from other places on demand as well! */
     Runnable viewAllAppts = () -> {
+        appointmentsObservableList.clear();
         appointmentsObservableList = Query.getAllAppointments();
         apptsTable.setItems(appointmentsObservableList);
     };
 
     /** lambda function provides a functional interface for me to quickly get weekly appointments and populate the table with them; putting this into a lambda function allows me to execute it as a runnable function on demand, which is handier than putting all of it in my initialization manually or using it directly in the button press.  It also means that I can call it from other places on demand as well! */
     Runnable viewWeeklyAppts = () -> {
+        appointmentsByWeekObservableList.clear();
         appointmentsByWeekObservableList = Query.getAppointmentsThisWeek();
         apptsTable.setItems(appointmentsByWeekObservableList);
     };
 
     /** lambda function provides a functional interface for me to quickly get monthly appointments and populate the table with them; putting this into a lambda function allows me to execute it as a runnable function on demand, which is handier than putting all of it in my initialization manually or using it directly in the button press.  It also means that I can call it from other places on demand as well! */
     Runnable viewMonthlyAppts = () -> {
+        appointmentsByMonthObservableList.clear();
         appointmentsByMonthObservableList = Query.getAppointmentsThisMonth();
         apptsTable.setItems(appointmentsByMonthObservableList);
     };

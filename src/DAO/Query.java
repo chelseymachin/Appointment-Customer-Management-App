@@ -952,7 +952,6 @@ public class Query {
         ZoneId databaseZoneId = ZoneId.of("UTC");
 
         ZonedDateTime dateTimeToZoned = apptDateTime.atZone(currentUserZoneId);
-
         ZonedDateTime userZoneDateTimeToUTC = dateTimeToZoned.withZoneSameInstant(databaseZoneId);
 
         LocalDateTime UTCZonedDateTimeToLDT = userZoneDateTimeToUTC.toLocalDateTime();
