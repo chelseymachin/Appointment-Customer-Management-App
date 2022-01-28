@@ -1,5 +1,6 @@
 package DAO;
 
+import controller.AppointmentScreen;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
@@ -58,7 +59,7 @@ public class Query {
             try {
                 connection = DatabaseConnection.openConnection();
                 // create result set from query attempt with currently logged in user as input
-                String sql = "SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID=? AND a.Start BETWEEN ? AND ?";
+                String sql = "SELECT Appointment_ID, Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID=? AND a.Start BETWEEN ? AND ?";
                 PreparedStatement prepared = connection.prepareStatement(sql);
                 prepared.setInt(1, userId);
                 prepared.setTimestamp(2, Timestamp.valueOf(nowConvertedToUTC));
@@ -68,9 +69,14 @@ public class Query {
 
                 // Loops through appointment results from database and alerts informing user of customer name, local time of appointment, and location
                 if (results.next()) {
-                    LocalDateTime apptStartInLocalTime = results.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                    String apptDate = results.getDate("Start").toLocalDate().toString();
+                    String apptStart = results.getTime("Start").toLocalTime().toString();
+
+                    LocalDateTime apptStartInUTC = AppointmentScreen.stringToLDTConverter(apptStart, apptDate);
+                    LocalDateTime apptStartInUserTime = convertFromUTCToUserTimeZone(apptStartInUTC);
+
                     Alert a = new Alert(Alert.AlertType.INFORMATION);
-                    a.setContentText("You have an appointment with " + results.getString("Customer_Name") + " starting shortly at " + apptStartInLocalTime.toLocalTime() + "! Better make your way to " + results.getString("Location") + " soon!");
+                    a.setContentText("Today is " + LocalDate.now() + " and you have an appointment (ID #" + results.getInt("Appointment_ID") + ") with " + results.getString("Customer_Name") + " starting shortly at " + apptStartInUserTime.toLocalTime() + "! Better make your way to " + results.getString("Location") + " soon!");
                     a.showAndWait();
                 } else {
                     Alert a = new Alert(Alert.AlertType.INFORMATION);
@@ -80,6 +86,7 @@ public class Query {
                 }
             } catch (SQLException exception) {
                 System.out.println("Unable to check for upcoming appts");
+                exception.printStackTrace();
             } finally {
                 DatabaseConnection.closeConnection();
             }
