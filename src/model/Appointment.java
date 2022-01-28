@@ -160,6 +160,7 @@ public class Appointment {
         this.date = date;
     }
 
+
     public LocalTime getStartTime() {
         return startTime;
     }

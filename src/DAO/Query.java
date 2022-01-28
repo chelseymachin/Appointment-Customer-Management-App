@@ -53,23 +53,24 @@ public class Query {
     public static void checkForUpcomingAppts(Integer userId) {
         Connection connection;
         LocalDateTime nowConvertedToUTC = convertFromUserTimeZoneToUTC(LocalDateTime.now());
+        LocalDateTime nowPlusFifteenUTC = nowConvertedToUTC.plusMinutes(15);
 
             try {
                 connection = DatabaseConnection.openConnection();
                 // create result set from query attempt with currently logged in user as input
-                String sql = "SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID=? AND a.Start BETWEEN ? AND ?+15";
+                String sql = "SELECT Customer_Name, Location, Start FROM customers c INNER JOIN appointments a ON c.Customer_ID=a.Customer_ID INNER JOIN users u ON a.User_ID=u.User_ID WHERE a.User_ID=? AND a.Start BETWEEN ? AND ?";
                 PreparedStatement prepared = connection.prepareStatement(sql);
                 prepared.setInt(1, userId);
                 prepared.setTimestamp(2, Timestamp.valueOf(nowConvertedToUTC));
-                prepared.setTimestamp(3, Timestamp.valueOf(nowConvertedToUTC));
+                prepared.setTimestamp(3, Timestamp.valueOf(nowPlusFifteenUTC));
                 prepared.execute();
                 ResultSet results = prepared.getResultSet();
 
                 // Loops through appointment results from database and alerts informing user of customer name, local time of appointment, and location
                 if (results.next()) {
-                    LocalDateTime apptTimeConvertedToUserTime = convertFromUTCToUserTimeZone(LocalDateTime.parse(results.getString("Start")));
+                    LocalDateTime apptStartInLocalTime = results.getTimestamp("Start").toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
                     Alert a = new Alert(Alert.AlertType.INFORMATION);
-                    a.setContentText("You have an appointment with " + results.getString("Customer_Name") + " starting shortly at " + apptTimeConvertedToUserTime + "! Better make your way to " + results.getString("Location") + " soon!");
+                    a.setContentText("You have an appointment with " + results.getString("Customer_Name") + " starting shortly at " + apptStartInLocalTime.toLocalTime() + "! Better make your way to " + results.getString("Location") + " soon!");
                     a.showAndWait();
                 } else {
                     Alert a = new Alert(Alert.AlertType.INFORMATION);
@@ -934,6 +935,7 @@ public class Query {
         return null;
     }
 
+
     public static LocalDateTime convertFromUTCToUserTimeZone(LocalDateTime apptDateTime) {
         ZoneId currentUserZoneId = ZoneId.systemDefault();
         ZoneId databaseZoneId = ZoneId.of("UTC");
@@ -942,9 +944,7 @@ public class Query {
 
         ZonedDateTime zonedDateTimeToUserZone = dateTimeToZoned.withZoneSameInstant(currentUserZoneId);
 
-        LocalDateTime userZonedDateTimeToLDT = zonedDateTimeToUserZone.toLocalDateTime();
-
-        return userZonedDateTimeToLDT;
+        return zonedDateTimeToUserZone.toLocalDateTime();
     }
 
     public static LocalDateTime convertFromUserTimeZoneToUTC(LocalDateTime apptDateTime) {
@@ -954,22 +954,17 @@ public class Query {
         ZonedDateTime dateTimeToZoned = apptDateTime.atZone(currentUserZoneId);
         ZonedDateTime userZoneDateTimeToUTC = dateTimeToZoned.withZoneSameInstant(databaseZoneId);
 
-        LocalDateTime UTCZonedDateTimeToLDT = userZoneDateTimeToUTC.toLocalDateTime();
-
-        return UTCZonedDateTimeToLDT;
+        return userZoneDateTimeToUTC.toLocalDateTime();
     }
 
     public static LocalDateTime convertFromUserTimeZoneToEST(LocalDateTime apptDateTime) {
         ZoneId currentUserZoneId = ZoneId.systemDefault();
-        ZoneId businessZoneId = ZoneId.of(ZoneId.SHORT_IDS.get("EST"));
+        ZoneId businessZoneId = ZoneId.of("America/New_York");
 
         ZonedDateTime dateTimeToZoned = apptDateTime.atZone(currentUserZoneId);
-
         ZonedDateTime userZoneDateTimeToEST = dateTimeToZoned.withZoneSameInstant(businessZoneId);
 
-        LocalDateTime ESTZonedDateTimeToLDT = userZoneDateTimeToEST.toLocalDateTime();
-
-        return ESTZonedDateTimeToLDT;
+        return userZoneDateTimeToEST.toLocalDateTime();
     }
 
 }
