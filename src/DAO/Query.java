@@ -93,7 +93,6 @@ public class Query {
     }
 
     // helper database query functions to validate appointment times against existing appointment records in database
-
     /**
      * Checks start and end of appointment against others in database with same customer id; includes selected appointment id in order to allow itself to be overwritten if some parameters change (customer, date, etc)
      *
@@ -104,36 +103,37 @@ public class Query {
      * @return true if the appointment data input overlaps an already existing appointment (that's not itself); false if it doesn't overlap any other appointments (but itself)
      */
     public static boolean doesItOverlapAnyExistingApptButItself(LocalDateTime start, LocalDateTime end, Integer customerId, Integer apptId) {
-       Connection connection;
+        Connection connection;
 
         try {
             connection = DatabaseConnection.openConnection();
             // prep SQL statement; then insert variables from function input
-            String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments WHERE (? >= Start AND ? <= End) OR (? <= Start AND ? >= End) OR (? <= Start AND ? >= Start) OR (? <= End AND ? >= End)";
+            String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start), Appointment_ID FROM appointments WHERE Appointment_ID != ? AND ((? >= Start AND ? <= End) OR (? <= Start AND ? >= End) OR (? <= Start AND ? >= Start) OR (? <= End AND ? >= End))";
+
             PreparedStatement preparedSQL = connection.prepareStatement(sql);
-            preparedSQL.setTimestamp(1, Timestamp.valueOf(start));
+            preparedSQL.setInt(1, apptId);
             preparedSQL.setTimestamp(2, Timestamp.valueOf(start));
-            preparedSQL.setTimestamp(3, Timestamp.valueOf(end));
+            preparedSQL.setTimestamp(3, Timestamp.valueOf(start));
             preparedSQL.setTimestamp(4, Timestamp.valueOf(end));
-            preparedSQL.setTimestamp(5, Timestamp.valueOf(start));
-            preparedSQL.setTimestamp(6, Timestamp.valueOf(end));
-            preparedSQL.setTimestamp(7, Timestamp.valueOf(start));
-            preparedSQL.setTimestamp(8, Timestamp.valueOf(end));
+            preparedSQL.setTimestamp(5, Timestamp.valueOf(end));
+            preparedSQL.setTimestamp(6, Timestamp.valueOf(start));
+            preparedSQL.setTimestamp(7, Timestamp.valueOf(end));
+            preparedSQL.setTimestamp(8, Timestamp.valueOf(start));
+            preparedSQL.setTimestamp(9, Timestamp.valueOf(end));
             preparedSQL.execute();
             ResultSet results = preparedSQL.getResultSet();
 
             // loops through overlapping appointments to check for a few factors
             while (results.next()) {
                 // customer ID and Appt ID are the same, then the only appointment overlapping this one is itself, so we can safely save over it
-                if ((results.getInt("Customer_ID") == customerId) && (results.getInt("Appointment_ID") == apptId)) {
-                    return false;
-                }
+                Integer customerIdResult = results.getInt("Customer_ID");
+                Integer appointmentIdResult = results.getInt("Appointment_ID");
                 // customer id is not the same but the appt id is; that means that the customer has been changed, meaning it no longer overlaps the previous customer's appointment and can safely be saved
-                else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") == apptId)) {
+                if ((customerIdResult != customerId) && (appointmentIdResult == apptId)) {
                     return false;
                 }
                 // customer id is not the same and appt id is also not; the appt overlaps, but it's for a different customer/appt combo so we can safely save
-                else if ((results.getInt("Customer_ID") != customerId) && (results.getInt("Appointment_ID") != apptId)) {
+                else if ((customerIdResult != customerId) && (appointmentIdResult != apptId)) {
                     return false;
                 }
                 // any other possibility means an overlap and should return false; an indication that we shouldn't save the appointment details selected
@@ -160,10 +160,6 @@ public class Query {
      */
     public static boolean doesItOverlapCustomersOtherAppointments(LocalDateTime start, LocalDateTime end, Integer customerId) throws SQLException {
         Connection connection;
-        // converts input LDT/date + time to just a LT/time object
-        LocalTime startTime = start.toLocalTime();
-        LocalTime endTime = end.toLocalTime();
-
         // set return variable to false by default
         Boolean itOverlaps = false;
 
@@ -172,20 +168,20 @@ public class Query {
             connection = DatabaseConnection.openConnection();
             String sql = "SELECT Customer_ID, TIME(Start), TIME(End), DATE(Start) FROM appointments WHERE (? >= TIME(Start) AND ? <= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(End)) OR (? <= TIME(Start) AND ? >= TIME(Start)) OR (? <= TIME(End) AND ? >= TIME(End));";
             PreparedStatement prepared = connection.prepareStatement(sql);
-            prepared.setString(1, startTime.toString());
-            prepared.setString(2, startTime.toString());
-            prepared.setString(3, endTime.toString());
-            prepared.setString(4, endTime.toString());
-            prepared.setString(5, startTime.toString());
-            prepared.setString(6, endTime.toString());
-            prepared.setString(7, startTime.toString());
-            prepared.setString(8, endTime.toString());
+            prepared.setTimestamp(1, Timestamp.valueOf(start));
+            prepared.setTimestamp(2, Timestamp.valueOf(start));
+            prepared.setTimestamp(3, Timestamp.valueOf(end));
+            prepared.setTimestamp(4, Timestamp.valueOf(end));
+            prepared.setTimestamp(5, Timestamp.valueOf(start));
+            prepared.setTimestamp(6, Timestamp.valueOf(end));
+            prepared.setTimestamp(7, Timestamp.valueOf(start));
+            prepared.setTimestamp(8, Timestamp.valueOf(end));
             prepared.execute();
             ResultSet results = prepared.getResultSet();
 
             // loops through all appointments that overlap to see if any of them are for the same customer on the same date; if so, returns true
             while (results.next()) {
-                    if ((results.getInt("Customer_ID") == customerId) & (results.getString("DATE(Start)") == start.toLocalDate().toString())) {
+                    if ((results.getInt("Customer_ID") == customerId) & (results.getDate("DATE(Start)").toLocalDate().equals(start.toLocalDate()))) {
                         itOverlaps = true;
                     }
             }
